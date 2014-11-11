@@ -1,0 +1,15 @@
+{
+  "name": "CreativeCodeChat",
+  "version": "0.1.0",
+  "description": "Multiuser code chat toy based on p5.js",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Abe Pazos",
+  "license": "MIT",
+  "dependencies": {
+    "express": "4.10.2",
+    "socket.io": "1.2.0"
+  }
+}
