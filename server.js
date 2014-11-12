@@ -46,7 +46,7 @@ io.on('connection', function(socket) {
     socket.emit('say', 'SERVER', 'Hi ' + username + '!\n'
         + 'You are in the ' + socket.room + ' room '
         + getUsersInRoom(username, socket.room) + '.\n'
-        + 'Use cc.join("roomName") to change rooms.');
+        + 'Use cc.joinRoom("roomName") to change rooms.');
     // to room
 		socket.to(socket.room).emit('say', 'SERVER',
                 username + ' is here');
@@ -55,7 +55,7 @@ io.on('connection', function(socket) {
   });
 
 
-	socket.on('join', function(newroom){
+	socket.on('joinRoom', function(newroom){
 		socket.leave(socket.room);
 		socket.join(newroom);
     // to you
@@ -67,31 +67,40 @@ io.on('connection', function(socket) {
 		socket.room = newroom;
 	});
 
-  socket.on('vars', function(data) {
-    console.log('setup', data.name, data.obj);
-  });
-
-  socket.on('draw', function(data) {
-    console.log('draw', data.name, data.f);
-  });
-
   socket.on('say', function(msg) {
     socket.broadcast.to(socket.room).emit('say', socket.username, msg);
   });
 
+  socket.on('vars', function(name, obj) {
+    console.log('vars', name, obj);
+    io.to(socket.room).emit('vars', name, obj);
+  });
+
+  socket.on('draw', function(name, func) {
+    console.log('draw', name, func);
+    io.to(socket.room).emit('draw', name, func);
+  });
+
+  socket.on('remove', function(name) {
+    console.log('remove', name);
+    io.to(socket.room).emit('remove', name);
+  });
+
+  socket.on('depth', function(name, dep) {
+    console.log('depth', name, dep)
+    io.to(socket.room).emit('depth', name, dep);
+  });
+
   socket.on('disconnect', function() {
     console.log('user disconnect ' + socket.username);
-
-    //io.emit('some event', { for: 'everyone' });
-    //socket.emit('sender')
-    //socket.broadcast.emit('everyone but sender');
-    //socket.to('room').emit('ppl in room');
   });
 
 });
 
 /*
-  The server must keep a copy of all layers ON DISK.
-
-  When someone connects, it will send all layers to that person.
+  1. Send commands back to user
+  2. Keep a copy of all layer data.
+  3. Keep data on disk.
+     https://github.com/louischatriot/nedb
+  4. Send all layer data to user upon connection.
 */

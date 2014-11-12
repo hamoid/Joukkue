@@ -2,13 +2,6 @@ var socket = io();
 var layers = {};
 var layersSorted = [];
 
-function createLayer(name) {
-  layers[name] = {};
-  layers[name].name = name;
-  layers[name].vars = {};
-  layersSorted.push(layers[name]);
-}
-
 var cc = {
 
   listLayers: function() {
@@ -22,66 +15,42 @@ var cc = {
     if(arguments.length != 1 || typeof name !== "string") {
       return 'use: cc.print("layerName")';
     }
-    return JSON.stringify(layers[name].vars) + "\n\n" + layers[name].draw.toString();
+    return "cc.vars(\"" + name + "\", " + JSON.stringify(layers[name].vars) + ");\n\n"
+        + "cc.draw(\"" + name + "\", " + layers[name].draw.toString() + ");";
   },
 
   vars: function(name, obj) {
     if(arguments.length != 2 || typeof name !== "string" || typeof obj !== "object") {
       return 'use: cc.vars("layerName", { x:10, y:10 })';
     }
-    if(layers[name] == undefined) {
-      createLayer(name);
-    }
-    for(var k in obj) {
-      layers[name].vars[k] = obj[k];
-    }
-    socket.emit('vars', { name:name, obj:obj });
-    return "vars." + name + " = " + JSON.stringify(obj);
+    socket.emit('vars', name, obj);
+    return " . ";
   },
 
-  draw: function(name, f) {
-    if(arguments.length != 2 || typeof name !== "string" || typeof f !== "function") {
+  draw: function(name, func) {
+    if(arguments.length != 2 || typeof name !== "string" || typeof func !== "function") {
       return 'use: cc.draw("layerName", function(d) { line(d.x, d.y, 0, 0); })';
+    } else {
+      socket.emit('draw', name, func.toString());
+      return " . ";
     }
-    if(layers[name] == undefined) {
-      createLayer(name);
-    }
-    layers[name].draw = f;
-    // emit f
-    return "draw." + name + f.toString();
   },
 
   remove: function(name) {
     if(arguments.length != 1 || typeof name !== "string") {
       return 'use: cc.remove("layerName")';
+    } else {
+      socket.emit('remove', name);
+      return " . ";
     }
-    for(var i=layersSorted.length-1; i>=0; i--) {
-      if(layersSorted[i] == layers[name]) {
-        layersSorted.splice(i, 1);
-      }
-    }
-    delete layers[name];
   },
 
   depth: function(name, dep) {
     if(arguments.length != 2 || typeof name !== "string" || typeof dep !== "number") {
       return 'use: cc.depth("layerName", layerDepth)';
-    }
-    if(dep < 0) {
-      dep = 0;
-    }
-    if(dep > layersSorted.length-1) {
-      dep = layersSorted.length-1;
-    }
-    var found = undefined;
-    for(var i=layersSorted.length-1; i>=0; i--) {
-      if(layersSorted[i] == layers[name]) {
-        found = layersSorted.splice(i, 1)[0];
-        break;
-      }
-    }
-    if(found != undefined) {
-      layersSorted.splice(Math.floor(dep), 0, found);
+    } else {
+      socket.emit('depth', name, dep);
+      return " . ";
     }
   },
 
@@ -90,8 +59,8 @@ var cc = {
     return " . ";
   },
 
-  join: function(roomName) {
-    socket.emit('join', roomName);
+  joinRoom: function(roomName) {
+    socket.emit('joinRoom', roomName);
     return " . ";
   },
 
@@ -99,10 +68,6 @@ var cc = {
     return "Here goes\nthe help";
   }
 }
-
-// socket.emit('switchRoom', room);
-
-// splice(index, howMany, elementToAdd)
 
 socket.on('connect', function() {
   var name = "";
@@ -115,6 +80,64 @@ socket.on('connect', function() {
 socket.on('say', function(username, msg){
   console.log(username + ": " + msg);
 });
+
+socket.on('vars', function(name, obj) {
+  console.log(name + ".vars = " + JSON.stringify(obj));
+  if(layers[name] == undefined) {
+    layers[name] = {};
+    layers[name].name = name;
+  }
+  if(layers[name].vars == undefined) {
+    layers[name].vars = {};
+  }
+  for(var k in obj) {
+    layers[name].vars[k] = obj[k];
+  }
+});
+
+socket.on('draw', function(name, func) {
+  console.log(name + '.draw = ' + func);
+  if(layers[name] == undefined) {
+    layers[name] = {};
+    layers[name].name = name;
+  }
+  if(layers[name].draw == undefined) {
+    layersSorted.push(layers[name]);
+  }
+  eval("var f = " + func);
+  layers[name].draw = f;
+});
+
+socket.on('remove', function(name) {
+  console.log('remove ', name);
+  for(var i=layersSorted.length-1; i>=0; i--) {
+    if(layersSorted[i] == layers[name]) {
+      layersSorted.splice(i, 1);
+    }
+  }
+  delete layers[name];
+});
+
+socket.on('depth', function(name, dep) {
+  if(dep < 0) {
+    dep = 0;
+  }
+  if(dep > layersSorted.length-1) {
+    dep = layersSorted.length-1;
+  }
+  console.log(name + '.depth = ', dep);
+  var found = undefined;
+  for(var i=layersSorted.length-1; i>=0; i--) {
+    if(layersSorted[i] == layers[name]) {
+      found = layersSorted.splice(i, 1)[0];
+      break;
+    }
+  }
+  if(found != undefined) {
+    layersSorted.splice(Math.floor(dep), 0, found);
+  }
+});
+
 
 // p5.js
 
