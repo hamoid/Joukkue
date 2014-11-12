@@ -20,7 +20,8 @@ var CreativeCodeChat = function() {
     + '  cc.draw(function(d) { line(d.x, d.y, 100, 100); }) // set draw function of selected layer\n'
     + '  cc.remove()             // get rid of selected layer\n'
     + '  cc.depth(3)             // set z depth of selected layer\n'
-    + '  cc.say("hello coders!") // talk to other players\n',
+    + '  cc.say("hello coders!") // talk to other players\n'
+    + '  cc.joinRoom("roomName") // go play to a different room,
     welcome:        'Welcome to CreativeCodeChat v0.1 - https://github.com/hamoid/creativecodechat',
     prompt:         'How should we call you today?',
     promptB:        'How should we call you today? (letters / numbers only)',
