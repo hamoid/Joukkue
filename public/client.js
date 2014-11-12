@@ -1,163 +1,219 @@
-var socket = io();
-var layers = {};
-var layersSorted = [];
+var CreativeCodeChat = function() {
+  this.socket = io();
+  this.layersSorted = [];
+  this.layers = {};
+  this.currentLayer = undefined;
+  this.msg = {
+    undefinedLayer: 'Call cc.choose("someLayer"); first',
+    layerNotFound:  'Layer %s not found, but I will keep my eyes open.',
+    layerCrashed:   'Layer %s crashed',
+    currentLayerIs: '%s is now the current layer',
+    drawHowto:      'use: cc.draw(function(d) { line(d.x, d.y, 0, 0); })',
+    depthHowto:     'use: cc.depth("layerName", layerDepth)',
+    varsHowto:      'use: cc.vars({ x:10, y:10 })',
+    help:           'CreativeCodeChat uses p5.js and is based on layers.\n'
+    + 'These are the available commands:\n'
+    + '  cc.choose("layerName")  // select existing or new layer to work on\n'
+    + '  cc.list()               // list existing layer names\n'
+    + '  cc.print()              // print content of selected layer\n'
+    + '  cc.vars({ x:0, y:0 })   // set properties of selected layer\n'
+    + '  cc.draw(function(d) { line(d.x, d.y, 100, 100); }) // set draw function of selected layer\n'
+    + '  cc.remove()             // get rid of selected layer\n'
+    + '  cc.depth(3)             // set z depth of selected layer\n'
+    + '  cc.say("hello coders!") // talk to other players\n',
+    welcome:        'Welcome to CreativeCodeChat v0.1 - https://github.com/hamoid/creativecodechat',
+    prompt:         'How should we call you today?',
+    promptB:        'How should we call you today? (letters / numbers only)',
+  };
 
-var cc = {
+  var _this = this;
 
-  listLayers: function() {
-    for(var l in layers) {
-      // add author, age
-      console.log(l);
+  // Socket events
+
+  this.socket.on('connect', function() {
+    var name = null;
+    var question = _this.msg.prompt;
+    while(name == null || !name.match(/\w+/)) {
+      name = prompt(question)
+      question = _this.msg.promptB;
     }
-  },
+    _this.socket.emit('addUser', name);
+  });
 
-  print: function(name) {
-    if(arguments.length != 1 || typeof name !== "string") {
-      return 'use: cc.print("layerName")';
-    }
-    return "cc.vars(\"" + name + "\", " + JSON.stringify(layers[name].vars) + ");\n\n"
-        + "cc.draw(\"" + name + "\", " + layers[name].draw.toString() + ");";
-  },
+  this.socket.on('say', function(username, msg){
+    console.log(username + ": " + msg);
+  });
 
-  vars: function(name, obj) {
-    if(arguments.length != 2 || typeof name !== "string" || typeof obj !== "object") {
-      return 'use: cc.vars("layerName", { x:10, y:10 })';
+  this.socket.on('vars', function(name, obj) {
+    console.log(name + ".vars = " + JSON.stringify(obj));
+    if(_this.layers[name] == undefined) {
+      _this.layers[name] = {};
+      _this.layers[name].name = name;
     }
-    socket.emit('vars', name, obj);
+    if(_this.layers[name].vars == undefined) {
+      _this.layers[name].vars = {};
+    }
+    for(var k in obj) {
+      _this.layers[name].vars[k] = obj[k];
+    }
+  });
+
+  this.socket.on('draw', function(name, func) {
+    console.log(name + '.draw = ' + func);
+    if(_this.layers[name] == undefined) {
+      _this.layers[name] = {};
+      _this.layers[name].name = name;
+    }
+    if(_this.layers[name].draw == undefined) {
+      _this.layersSorted.push(_this.layers[name]);
+    }
+    eval("var f = " + func);
+    _this.layers[name].draw = f;
+  });
+
+  this.socket.on('remove', function(name) {
+    console.log('remove ', name);
+    for(var i=_this.layersSorted.length-1; i>=0; i--) {
+      if(_this.layersSorted[i] == _this.layers[name]) {
+        _this.layersSorted.splice(i, 1);
+      }
+    }
+    delete _this.layers[name];
+  });
+
+  this.socket.on('depth', function(name, dep) {
+    if(dep < 0) {
+      dep = 0;
+    }
+    if(dep > _this.layersSorted.length-1) {
+      dep = _this.layersSorted.length-1;
+    }
+    console.log(name + '.depth = ', dep);
+    var found = undefined;
+    for(var i=_this.layersSorted.length-1; i>=0; i--) {
+      if(_this.layersSorted[i] == _this.layers[name]) {
+        found = _this.layersSorted.splice(i, 1)[0];
+        break;
+      }
+    }
+    if(found != undefined) {
+      _this.layersSorted.splice(Math.floor(dep), 0, found);
+    }
+  });
+};
+
+// Helpers
+
+CreativeCodeChat.prototype.fmt = function(msg, etc) {
+  var i = 1;
+  var args = arguments;
+  return msg.replace(/%((%)|s)/g, function (m) { return m[2] || args[i++] })
+}
+
+// Commands
+
+CreativeCodeChat.prototype.list = function() {
+  for(var l in this.layersSorted) {
+    if(this.layersSorted[l].name) {
+      console.log(this.layersSorted[l].name);
+    }
+  }
+};
+CreativeCodeChat.prototype.print = function() {
+  if(this.currentLayer == undefined) {
+    return this.err.undefinedLayer;
+  }
+  return "cc.vars(" + JSON.stringify(this.layers[this.currentLayer].vars) + ");\n\n"
+  + "cc.draw(" + this.layers[this.currentLayer].draw.toString() + ");";
+};
+CreativeCodeChat.prototype.vars = function(obj) {
+  if(this.currentLayer == undefined) {
+    return this.err.undefinedLayer;
+  }
+  if(arguments.length != 1 || typeof obj !== "object") {
+    return this.msg.varsHowto;
+  }
+  this.socket.emit('vars', this.currentLayer, obj);
+  return " . ";
+};
+
+CreativeCodeChat.prototype.draw = function(func) {
+  if(this.currentLayer == undefined) {
+    return this.err.undefinedLayer;
+  }
+  if(arguments.length != 1 || typeof func !== "function") {
+    return this.err.drawHowto;
+  } else {
+    this.socket.emit('draw', this.currentLayer, func.toString());
     return " . ";
-  },
-
-  draw: function(name, func) {
-    if(arguments.length != 2 || typeof name !== "string" || typeof func !== "function") {
-      return 'use: cc.draw("layerName", function(d) { line(d.x, d.y, 0, 0); })';
-    } else {
-      socket.emit('draw', name, func.toString());
-      return " . ";
-    }
-  },
-
-  remove: function(name) {
-    if(arguments.length != 1 || typeof name !== "string") {
-      return 'use: cc.remove("layerName")';
-    } else {
-      socket.emit('remove', name);
-      return " . ";
-    }
-  },
-
-  depth: function(name, dep) {
-    if(arguments.length != 2 || typeof name !== "string" || typeof dep !== "number") {
-      return 'use: cc.depth("layerName", layerDepth)';
-    } else {
-      socket.emit('depth', name, dep);
-      return " . ";
-    }
-  },
-
-  say: function(msg) {
-    socket.emit('say', msg);
-    return " . ";
-  },
-
-  joinRoom: function(roomName) {
-    socket.emit('joinRoom', roomName);
-    return " . ";
-  },
-
-  help: function() {
-    return "Here goes\nthe help";
   }
 }
 
-socket.on('connect', function() {
-  var name = "";
-  while(!name.match(/\w+/)) {
-    name = prompt("Player name? [A-Za-z0-9_]")
-  }
-  socket.emit('addUser', name);
-});
+CreativeCodeChat.prototype.choose = function(name) {
+  this.currentLayer = name;
+  return this.fmt(this.msg.currentLayerIs, name);
+};
 
-socket.on('say', function(username, msg){
-  console.log(username + ": " + msg);
-});
+CreativeCodeChat.prototype.remove = function() {
+  if(this.currentLayer == undefined) {
+    return this.err.undefinedLayer;
+  } else if(this.layers[this.currentLayer] == undefined) {
+    return this.fmt(this.msg.layerNotFound, this.currentLayer);
+  } else {
+    this.socket.emit('remove', this.currentLayer);
+    return " . ";
+  }
+};
 
-socket.on('vars', function(name, obj) {
-  console.log(name + ".vars = " + JSON.stringify(obj));
-  if(layers[name] == undefined) {
-    layers[name] = {};
-    layers[name].name = name;
+CreativeCodeChat.prototype.depth = function(dep) {
+  if(arguments.length != 1 || typeof dep !== "number") {
+    return this.msg.depthHowto;
+  } else {
+    this.socket.emit('depth', this.currentLayer, dep);
+    return " . ";
   }
-  if(layers[name].vars == undefined) {
-    layers[name].vars = {};
-  }
-  for(var k in obj) {
-    layers[name].vars[k] = obj[k];
-  }
-});
+};
 
-socket.on('draw', function(name, func) {
-  console.log(name + '.draw = ' + func);
-  if(layers[name] == undefined) {
-    layers[name] = {};
-    layers[name].name = name;
-  }
-  if(layers[name].draw == undefined) {
-    layersSorted.push(layers[name]);
-  }
-  eval("var f = " + func);
-  layers[name].draw = f;
-});
+CreativeCodeChat.prototype.say = function(msg) {
+  this.socket.emit('say', msg);
+  return " . ";
+};
 
-socket.on('remove', function(name) {
-  console.log('remove ', name);
-  for(var i=layersSorted.length-1; i>=0; i--) {
-    if(layersSorted[i] == layers[name]) {
-      layersSorted.splice(i, 1);
-    }
-  }
-  delete layers[name];
-});
+CreativeCodeChat.prototype.joinRoom = function(roomName) {
+  this.socket.emit('joinRoom', roomName);
+  return " . ";
+};
 
-socket.on('depth', function(name, dep) {
-  if(dep < 0) {
-    dep = 0;
-  }
-  if(dep > layersSorted.length-1) {
-    dep = layersSorted.length-1;
-  }
-  console.log(name + '.depth = ', dep);
-  var found = undefined;
-  for(var i=layersSorted.length-1; i>=0; i--) {
-    if(layersSorted[i] == layers[name]) {
-      found = layersSorted.splice(i, 1)[0];
-      break;
-    }
-  }
-  if(found != undefined) {
-    layersSorted.splice(Math.floor(dep), 0, found);
-  }
-});
+CreativeCodeChat.prototype.help = function() {
+  return this.msg.help;
+};
+
+var cc = new CreativeCodeChat();
+
 
 
 // p5.js
 
 function setup() {
   createCanvas(800, 400);
+  background(0);
+  var img = loadImage("/creativeCodeChatLogo.png", function(i) {
+    image(i, width/2-i.width/2, height/2-i.height/2)
+  });
 }
 function draw() {
-  for(var i in layersSorted) {
+  for(var i in cc.layersSorted) {
     try {
       push();
-      layersSorted[i].draw(layersSorted[i].vars);
+      cc.layersSorted[i].draw(cc.layersSorted[i].vars);
       pop();
     } catch(e) {
-      // todo add author
-      println("Layer " + layersSorted[i].name + " crashed");
-      layersSorted.splice(i, 1);
+      println(this.fmt(this.msg.layerCrashed, cc.layersSorted[i].name));
+      cc.layersSorted.splice(i, 1);
     }
   }
 }
 
-// welcome player
+// welcome message
 
-console.log("Welcome to CodeChat v0.1\nBy Abe Pazos\n\nType cc.help() if you need it :)");
+console.log(cc.msg.welcome);

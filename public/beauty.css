@@ -1,5 +1,14 @@
 body {
-  background-color:#282422;
+  background-color:#3B3F41;
 	padding: 10px;
-  color:#585452;
+  color:#DACA98;
+  font-family:monospace;
+}
+#footer {
+  position:absolute;
+  bottom:0px;
+  right:10px;
+}
+a {
+  color:#DACA98;
 }

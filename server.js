@@ -4,7 +4,7 @@ app.get('/', function(req, res) {
     res.sendFile(__dirname + '/index.html');
 });
 
-app.get('/*.(js|css)', function(req, res) {
+app.get('/*.(js|css|png)', function(req, res) {
     res.sendFile(__dirname + "/public" + req.url);
 });
 
@@ -44,9 +44,10 @@ io.on('connection', function(socket) {
 
     // to you
     socket.emit('say', 'SERVER', 'Hi ' + username + '!\n'
-        + 'You are in the ' + socket.room + ' room '
-        + getUsersInRoom(username, socket.room) + '.\n'
-        + 'Use cc.joinRoom("roomName") to change rooms.');
+                + 'You are in the ' + socket.room + ' room '
+                + getUsersInRoom(username, socket.room) + '.\n'
+                + 'Use cc.joinRoom("roomName") to change rooms.\n'
+                + 'Type cc.help() if you need it :)');
     // to room
 		socket.to(socket.room).emit('say', 'SERVER',
                 username + ' is here');
