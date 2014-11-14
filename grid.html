@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<head>
+  <meta charset="utf-8">
+  <title>Page</title>
+  <style type="text/css">
+    body {
+        background-color:#444;
+        padding: 20px;
+    }
+    table.grid {
+        border-top:1px solid #222;
+        border-left:1px solid #222;
+        font-family:monospace;
+        font-size:11pt;
+        color:#999;
+        width:100%;
+    }
+    td {
+        border-right:1px solid #222;
+        border-bottom:1px solid #222;
+        padding: 10px;
+        vertical-align:top;
+    }
+    table.grid td.c1 {
+        width: 100px;
+    }
+    table.grid td.c2 {
+        width: 30%;
+    }
+    table.grid td.c4 {
+        width: 40px;
+    }
+    table.grid textarea, table.grid input {
+        background-color:inherit;
+        width:100%;
+        border:0px;
+        font-family:monospace;
+        font-size:11pt;
+        color:#999;
+        vertical-align:top;
+    }
+    table.grid textarea {
+        height:80px;
+    }
+    tr.editing {
+        background-color:#AAA;
+    }
+    tr.editing td,
+    tr.editing textarea,
+    tr.editing input {
+        color:black;
+    }
+  </style>
+</head>
+<body>
+  <table class="grid">
+    <tr class="r1">
+      <td class="c1"><input type="text" value="bg"/></td>
+      <td class="c2"><textarea></textarea></td>
+      <td class="c3"><textarea>background(0);</textarea></td>
+      <td class="c4"><input type="text" value="0"/></td>
+    </tr>
+    <tr class="r2">
+      <td class="c1"><input type="text" value="cir"/></td>
+      <td class="c2"><textarea>{x:1, y:1}</textarea></td>
+      <td class="c3"><textarea>ellipse(width/2, height/2, d.x, d.y);</textarea></td>
+      <td class="c4"><input type="text" value="1"/></td>
+    </tr>
+    <tr class="r3 editing">
+      <td class="c1"><input type="text" value="lines"/></td>
+      <td class="c2"><textarea>{x:[], y:[]}</textarea></td>
+      <td class="c3"><textarea>for(var i=0; i&lt;x.width; i++) {
+  point(d.x[i], d.x[i]);
+}</textarea></td>
+      <td class="c4"><input type="text" value="2"/></td>
+    </tr>
+  </table>
+  <script type="text/javascript" src="/jquery-1.7.2.min.js"></script>
+  <script type="text/javascript">
+    $(function() {
+        $("table.grid td.c1, table.grid td.c4").click(function(e) {
+            var t = $(e.currentTarget);
+            t.children("input").focus().select();
+        });
+        $("table.grid textarea, table.grid input").focus(function(e) {
+            var t = $(e.currentTarget);
+            $("table.grid tr").removeClass("editing");
+            t.parents("tr").addClass("editing");
+        });
+        // here detect ctrl+enter to send layer
+        
+        // don't change layer if you are editing it
+        // but show that someone changed it, and allow to reload
+    })
+  </script>
+</body>
+</html>

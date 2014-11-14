@@ -15,6 +15,10 @@ app.get('/', function(req, res) {
     res.sendFile(__dirname + '/index.html');
 });
 
+app.get('/grid.html', function(req, res) {
+    res.sendFile(__dirname + '/grid.html');
+});
+
 app.get('/*.(js|css|png)', function(req, res) {
     res.sendFile(__dirname + "/public" + req.url);
 });
