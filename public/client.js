@@ -1,8 +1,24 @@
+// an graphical interface will make this much simpler.
+// even if there's no autocomplete.
+// choose=click, list&print not necessary (visible already)
+// vars&draw=typing in box + ctrl+enter
+// remove=ctrl+del
+// have field for author, name, depth
+
+// arrays get holes when you delete! not good.
+// newest approach:
+// currentLayer = "cir"
+// layers = { bg: {}, cir: {}, bla: {}}  (unsorted) +
+// layerOrder = ["bg", "cir", "bla"]
+// both must be saved on server side
+
 var CreativeCodeChat = function() {
   this.socket = io();
-  this.layersSorted = [];
+
   this.layers = {};
+  this.layersSorted = [];
   this.currentLayer = undefined;
+
   this.msg = {
     undefinedLayer: 'Call cc.choose("someLayer"); first',
     layerNotFound:  'Layer %s not found, but I will keep my eyes open.',
@@ -11,6 +27,7 @@ var CreativeCodeChat = function() {
     drawHowto:      'use: cc.draw(function(d) { line(d.x, d.y, 0, 0); })',
     depthHowto:     'use: cc.depth("layerName", layerDepth)',
     varsHowto:      'use: cc.vars({ x:10, y:10 })',
+    chooseHowto:    'use: cc.choose("layerName")',
     help:           'CreativeCodeChat uses p5.js and is based on layers.\n'
     + 'These are the available commands:\n'
     + '  cc.choose("layerName")  // select existing or new layer to work on\n'
@@ -21,7 +38,7 @@ var CreativeCodeChat = function() {
     + '  cc.remove()             // get rid of selected layer\n'
     + '  cc.depth(3)             // set z depth of selected layer\n'
     + '  cc.say("hello coders!") // talk to other players\n'
-    + '  cc.joinRoom("roomName") // go play to a different room,
+    + '  cc.joinRoom("roomName") // go play to a different room',
     welcome:        'Welcome to CreativeCodeChat v0.1 - https://github.com/hamoid/creativecodechat',
     prompt:         'How should we call you today?',
     promptB:        'How should we call you today? (letters / numbers only)',
@@ -32,13 +49,15 @@ var CreativeCodeChat = function() {
   // Socket events
 
   this.socket.on('connect', function() {
-    var name = null;
-    var question = _this.msg.prompt;
-    while(name == null || !name.match(/\w+/)) {
-      name = prompt(question)
-      question = _this.msg.promptB;
-    }
-    _this.socket.emit('addUser', name);
+    window.setTimeout(function() {
+      var name = null;
+      var question = _this.msg.prompt;
+      while(name == null || !name.match(/\w+/)) {
+        name = prompt(question)
+        question = _this.msg.promptB;
+      }
+      _this.socket.emit('addUser', name);
+    }, 2000);
   });
 
   this.socket.on('say', function(username, msg){
@@ -47,61 +66,45 @@ var CreativeCodeChat = function() {
 
   this.socket.on('vars', function(name, obj) {
     console.log(name + ".vars = " + JSON.stringify(obj));
-    if(_this.layers[name] == undefined) {
-      _this.layers[name] = {};
-      _this.layers[name].name = name;
-    }
-    if(_this.layers[name].vars == undefined) {
-      _this.layers[name].vars = {};
-    }
+    _this.layers[name] = _this.layers[name] || { name: name };
+    _this.layers[name].vars = _this.layers[name].vars || {};
     for(var k in obj) {
       _this.layers[name].vars[k] = obj[k];
     }
   });
 
-  this.socket.on('draw', function(name, func) {
+  this.socket.on('draw', function(name, func, lyrSorted) {
     console.log(name + '.draw = ' + func);
-    if(_this.layers[name] == undefined) {
-      _this.layers[name] = {};
-      _this.layers[name].name = name;
-    }
-    if(_this.layers[name].draw == undefined) {
-      _this.layersSorted.push(_this.layers[name]);
-    }
     eval("var f = " + func);
+    _this.layers[name] = _this.layers[name] || { name: name };
     _this.layers[name].draw = f;
+
+    _this.layersSorted = lyrSorted;
   });
 
-  this.socket.on('remove', function(name) {
+  this.socket.on('remove', function(name, lyrSorted) {
     console.log('remove ', name);
-    for(var i=_this.layersSorted.length-1; i>=0; i--) {
-      if(_this.layersSorted[i] == _this.layers[name]) {
-        _this.layersSorted.splice(i, 1);
-      }
-    }
+    _this.layersSorted = lyrSorted;
     delete _this.layers[name];
   });
 
-  this.socket.on('depth', function(name, dep) {
-    if(dep < 0) {
-      dep = 0;
-    }
-    if(dep > _this.layersSorted.length-1) {
-      dep = _this.layersSorted.length-1;
-    }
+  this.socket.on('depth', function(name, dep, lyrSorted) {
     console.log(name + '.depth = ', dep);
-    var found = undefined;
-    for(var i=_this.layersSorted.length-1; i>=0; i--) {
-      if(_this.layersSorted[i] == _this.layers[name]) {
-        found = _this.layersSorted.splice(i, 1)[0];
-        break;
-      }
-    }
-    if(found != undefined) {
-      _this.layersSorted.splice(Math.floor(dep), 0, found);
-    }
+    _this.layersSorted = lyrSorted;
+  });
+
+  this.socket.on('allLayers', function(lyrSorted, lyr) {
+    // make real functions out of strings
+    Object.getOwnPropertyNames(lyr).forEach(function(l) {
+      eval("var f = " + lyr[l].draw);
+      lyr[l].draw = f;
+    });
+    _this.layers = lyr;
+    _this.layersSorted = lyrSorted;
   });
 };
+
+
 
 // Helpers
 
@@ -111,25 +114,24 @@ CreativeCodeChat.prototype.fmt = function(msg, etc) {
   return msg.replace(/%((%)|s)/g, function (m) { return m[2] || args[i++] })
 }
 
+
+
 // Commands
 
 CreativeCodeChat.prototype.list = function() {
-  for(var l in this.layersSorted) {
-    if(this.layersSorted[l].name) {
-      console.log(this.layersSorted[l].name);
-    }
-  }
+  console.log(this.layersSorted.join(", "));
+  return " . ";
 };
 CreativeCodeChat.prototype.print = function() {
   if(this.currentLayer == undefined) {
-    return this.err.undefinedLayer;
+    return this.msg.undefinedLayer;
   }
   return "cc.vars(" + JSON.stringify(this.layers[this.currentLayer].vars) + ");\n\n"
   + "cc.draw(" + this.layers[this.currentLayer].draw.toString() + ");";
 };
 CreativeCodeChat.prototype.vars = function(obj) {
   if(this.currentLayer == undefined) {
-    return this.err.undefinedLayer;
+    return this.msg.undefinedLayer;
   }
   if(arguments.length != 1 || typeof obj !== "object") {
     return this.msg.varsHowto;
@@ -140,30 +142,32 @@ CreativeCodeChat.prototype.vars = function(obj) {
 
 CreativeCodeChat.prototype.draw = function(func) {
   if(this.currentLayer == undefined) {
-    return this.err.undefinedLayer;
+    return this.msg.undefinedLayer;
   }
   if(arguments.length != 1 || typeof func !== "function") {
-    return this.err.drawHowto;
-  } else {
-    this.socket.emit('draw', this.currentLayer, func.toString());
-    return " . ";
+    return this.msg.drawHowto;
   }
+  this.socket.emit('draw', this.currentLayer, func.toString());
+  return " . ";
 }
 
 CreativeCodeChat.prototype.choose = function(name) {
+  if(arguments.length != 1 || typeof name !== "string") {
+    return this.msg.chooseHowto;
+  }
   this.currentLayer = name;
   return this.fmt(this.msg.currentLayerIs, name);
 };
 
 CreativeCodeChat.prototype.remove = function() {
   if(this.currentLayer == undefined) {
-    return this.err.undefinedLayer;
-  } else if(this.layers[this.currentLayer] == undefined) {
-    return this.fmt(this.msg.layerNotFound, this.currentLayer);
-  } else {
-    this.socket.emit('remove', this.currentLayer);
-    return " . ";
+    return this.msg.undefinedLayer;
   }
+  if(this.layers[this.currentLayer] == undefined) {
+    return this.fmt(this.msg.layerNotFound, this.currentLayer);
+  }
+  this.socket.emit('remove', this.currentLayer);
+  return " . ";
 };
 
 CreativeCodeChat.prototype.depth = function(dep) {
@@ -203,16 +207,17 @@ function setup() {
   });
 }
 function draw() {
-  for(var i in cc.layersSorted) {
+  cc.layersSorted.forEach(function(n) {
     try {
       push();
-      cc.layersSorted[i].draw(cc.layersSorted[i].vars);
+      cc.layers[n].draw(cc.layers[n].vars);
       pop();
     } catch(e) {
-      println(this.fmt(this.msg.layerCrashed, cc.layersSorted[i].name));
-      cc.layersSorted.splice(i, 1);
+      console.log(cc.fmt(cc.msg.layerCrashed, n));
+      // if crash, remove from layersSorted to avoid rendering
+      cc.layersSorted.splice(cc.layersSorted.indexOf(n), 1);
     }
-  }
+  });
 }
 
 // welcome message
