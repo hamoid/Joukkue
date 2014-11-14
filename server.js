@@ -106,7 +106,9 @@ io.on('connection', function(socket) {
 		socket.join(newroom);
 
     // to you
-		socket.emit('say', 'SERVER', 'Your are now in room '+ newroom);
+		socket.emit('say', 'SERVER',
+                'Your are now in the ' + newroom + ' room '
+                + getUsersInRoom(socket.username, newroom) + '.\n');
 
     // to old room
 		socket.broadcast.to(socket.room).emit('say', 'SERVER', socket.username + ' went to room ' + newroom);
