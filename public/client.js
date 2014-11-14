@@ -213,7 +213,7 @@ function draw() {
       cc.layers[n].draw(cc.layers[n].vars);
       pop();
     } catch(e) {
-      console.log(cc.fmt(cc.msg.layerCrashed, n));
+      console.log(cc.fmt(cc.msg.layerCrashed, n), e);
       // if crash, remove from layersSorted to avoid rendering
       cc.layersSorted.splice(cc.layersSorted.indexOf(n), 1);
     }
