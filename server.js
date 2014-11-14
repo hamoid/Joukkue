@@ -140,8 +140,8 @@ io.on('connection', function(socket) {
       function(err, numReplaced, newDoc) {
         console.log('update dbLayers', name, err, numReplaced, newDoc);
         dbSorted.update(
-          { room:socket.room, name: name },
-          { $set: { room: socket.room, name: name, names: layersSorted[socket.room] } },
+          { room:socket.room },
+          { $set: { room: socket.room, names: layersSorted[socket.room] } },
           { upsert: true },
           function(err, numReplaced, newDoc) {
             console.log('update dbSorted', name, err, numReplaced, newDoc);
@@ -163,8 +163,8 @@ io.on('connection', function(socket) {
       function(err, numRemoved) {
         console.log("remove dbLayers", err, numRemoved);
         dbSorted.update(
-          { room:socket.room, name: name },
-          { $set: { room: socket.room, name: name, names: layersSorted[socket.room] } },
+          { room:socket.room },
+          { $set: { room: socket.room, names: layersSorted[socket.room] } },
           { upsert: true },
           function(err, numReplaced, newDoc) {
             delete layers[socket.room][name];
@@ -187,8 +187,8 @@ io.on('connection', function(socket) {
     layersSorted[socket.room].splice(Math.floor(dep), 0, name);
 
     dbSorted.update(
-      { room:socket.room, name: name },
-      { $set: { room: socket.room, name: name, names: layersSorted[socket.room] } },
+      { room:socket.room },
+      { $set: { room: socket.room, names: layersSorted[socket.room] } },
       { upsert: true },
       function(err, numReplaced, newDoc) {
         console.log('update dbSorted', name, err, numReplaced, newDoc);
