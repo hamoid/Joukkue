@@ -65,12 +65,14 @@ var CreativeCodeChat = function() {
   });
 
   this.socket.on('vars', function(name, obj) {
-    console.log(name + ".vars = " + JSON.stringify(obj));
+    var txt = JSON.stringify(obj);
+    console.log(name + ".vars = " + txt);
     _this.layers[name] = _this.layers[name] || { name: name };
     _this.layers[name].vars = _this.layers[name].vars || {};
     Object.getOwnPropertyNames(obj).forEach(function(k) {
       _this.layers[name].vars[k] = obj[k];
     });
+    $('#' + name + '_vars').text(txt);
   });
 
   this.socket.on('draw', function(name, func, lyrSorted) {
@@ -80,12 +82,14 @@ var CreativeCodeChat = function() {
     _this.layers[name].draw = f;
 
     _this.layersSorted = lyrSorted;
+    $('#' + name + '_draw').text(func);
   });
 
   this.socket.on('remove', function(name, lyrSorted) {
     console.log('remove ', name);
     _this.layersSorted = lyrSorted;
     delete _this.layers[name];
+    $('#' + name + '_draw').parent().remove();
   });
 
   this.socket.on('depth', function(name, dep, lyrSorted) {
@@ -94,11 +98,32 @@ var CreativeCodeChat = function() {
   });
 
   this.socket.on('allLayers', function(lyrSorted, lyr) {
-    // make real functions out of strings
+    $('table.grid tr.editable').remove();
+    var row = 1;
+    var tabindex = 1;
+
     Object.getOwnPropertyNames(lyr).forEach(function(l) {
+      // make real functions out of strings
       eval("var f = " + lyr[l].draw);
       lyr[l].draw = f;
+
+      var html = '<tr class="r' + (row++) +' editable">'
+      + _this.fmt('<td id="%s_name" class="c1" tabindex="%s" contentEditable="true">%s</td>', lyr[l].name, tabindex++, lyr[l].name)
+      + _this.fmt('<td id="%s_vars" class="c2" tabindex="%s" contentEditable="true">%s</td>', lyr[l].name, tabindex++, lyr[l].vars ? JSON.stringify(lyr[l].vars) : "")
+      + _this.fmt('<td id="%s_draw" class="c3" tabindex="%s" contentEditable="true">%s</td>', lyr[l].name, tabindex++, lyr[l].draw || "")
+      + _this.fmt('<td id="%s_sort" class="c4" tabindex="%s" contentEditable="true">%s</td>', lyr[l].name, tabindex++, 0)
+      + '</tr>';
+
+      $(html).appendTo('table.grid');
+
+      $("table.grid tr.editable td").focus(function(e) {
+        var t = $(e.currentTarget);
+        $("table.grid tr").removeClass("editing");
+        t.parents("tr").addClass("editing");
+      });
+
     });
+
     _this.layers = lyr;
     _this.layersSorted = lyrSorted;
   });
@@ -200,7 +225,7 @@ var cc = new CreativeCodeChat();
 // p5.js
 
 function setup() {
-  createCanvas(800, 400);
+  createCanvas(600, 600);
   background(0);
   var img = loadImage("/creativeCodeChatLogo.png", function(i) {
     image(i, width/2-i.width/2, height/2-i.height/2)
@@ -223,3 +248,39 @@ function draw() {
 // welcome message
 
 console.log(cc.msg.welcome);
+
+// jQuery
+
+$(function() {
+  $("body").focus(function(e) {
+    var t = $(e.currentTarget);
+    //console.log(t);
+    //$("table.grid tr").removeClass("editing");
+    //t.parents("tr").addClass("editing");
+  });
+  $("body").click(function(e) {
+    if(e.target == e.currentTarget) {
+      $("table.grid tr").removeClass("editing");
+    }
+  });
+  $('table.grid').keydown(function(e) {
+    var k = e.keyCode || e.charCode;
+    //console.log(e);
+    if(e.ctrlKey && (k == 10 || k == 13)) {
+      console.log("SEND");
+      // find out layerName, column (name, vars, draw, order).
+      // allow changing layer name?
+      // alt+shift arrows
+      // ESC to undo your changes and accept other changes
+      // always have empty layer to allow creating
+    }
+    if( e.ctrlKey && (k == 8 || k == 46 )) {
+      console.log("DEL");
+      return false;
+    }
+  });
+
+  // don't change layer if you are editing it
+  // show where people are editing
+  // but show that someone changed it, and allow to reload
+})
