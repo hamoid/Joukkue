@@ -3,6 +3,9 @@
   <meta charset="utf-8">
   <title>Page</title>
   <style type="text/css">
+    html, body {
+      height: 100%;
+    }
     body {
         background-color:#444;
         padding: 20px;
@@ -15,11 +18,12 @@
         color:#999;
         width:100%;
     }
-    td {
+    td, th {
         border-right:1px solid #222;
         border-bottom:1px solid #222;
         padding: 10px;
         vertical-align:top;
+        text-align:left;
     }
     table.grid td.c1 {
         width: 100px;
@@ -33,14 +37,15 @@
     table.grid textarea, table.grid input {
         background-color:inherit;
         width:100%;
-        border:0px;
+        border:none;
+        outline:none;
         font-family:monospace;
         font-size:11pt;
         color:#999;
         vertical-align:top;
     }
     table.grid textarea {
-        height:80px;
+        height:60px;
     }
     tr.editing {
         background-color:#AAA;
@@ -54,6 +59,12 @@
 </head>
 <body>
   <table class="grid">
+    <tr>
+      <th>name</th>
+      <th>vars</th>
+      <th>draw</th>
+      <th>order</th>
+    </tr>
     <tr class="r1">
       <td class="c1"><input type="text" value="bg"/></td>
       <td class="c2"><textarea></textarea></td>
@@ -87,9 +98,30 @@
             $("table.grid tr").removeClass("editing");
             t.parents("tr").addClass("editing");
         });
-        // here detect ctrl+enter to send layer
-        
+        $("body").click(function(e) {
+          if(e.target == e.currentTarget) {
+            $("table.grid tr").removeClass("editing");
+          }
+        });
+        $('table.grid').keydown(function(e) {
+          var k = e.keyCode || e.charCode;
+          console.log(e);
+          if(e.ctrlKey && k == 10) {
+            console.log("SEND");
+            // find out layerName, column (name, vars, draw, order).
+            // allow changing layer name?
+            // alt+shift arrows
+            // ESC to undo your changes and accept other changes
+            // always have empty layer to allow creating
+          }
+          if( e.ctrlKey && (k == 8 || k == 46 )) {
+            console.log("DEL");
+            return false;
+          }
+        });
+
         // don't change layer if you are editing it
+        // show where people are editing
         // but show that someone changed it, and allow to reload
     })
   </script>
