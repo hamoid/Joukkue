@@ -97,9 +97,6 @@ io.on('connection', function(socket) {
 
 
 	socket.on('joinRoom', function(newroom){
-		socket.leave(socket.room);
-		socket.join(newroom);
-
     // to you
 		socket.emit('say', 'SERVER',
                 'Your are now in the ' + newroom + ' room '
@@ -110,6 +107,9 @@ io.on('connection', function(socket) {
 
     // to new room
 		socket.broadcast.to(newroom).emit('say', 'SERVER', socket.username + ' is here');
+
+		socket.leave(socket.room);
+		socket.join(newroom);
 		socket.room = newroom;
     sendLayersToUser();
 	});
@@ -207,6 +207,7 @@ io.on('connection', function(socket) {
   });
 
   socket.on('disconnect', function() {
+    socket.to(socket.room).emit('say', 'SERVER', socket.username + ' is gone');
     console.log('user disconnect ' + socket.username);
   });
 
