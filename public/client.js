@@ -68,9 +68,9 @@ var CreativeCodeChat = function() {
     console.log(name + ".vars = " + JSON.stringify(obj));
     _this.layers[name] = _this.layers[name] || { name: name };
     _this.layers[name].vars = _this.layers[name].vars || {};
-    for(var k in obj) {
+    Object.getOwnPropertyNames(obj).forEach(function(k) {
       _this.layers[name].vars[k] = obj[k];
-    }
+    });
   });
 
   this.socket.on('draw', function(name, func, lyrSorted) {
