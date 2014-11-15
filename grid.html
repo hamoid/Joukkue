@@ -106,7 +106,7 @@
         $('table.grid').keydown(function(e) {
           var k = e.keyCode || e.charCode;
           console.log(e);
-          if(e.ctrlKey && k == 10) {
+          if(e.ctrlKey && (k == 10 || k == 13)) {
             console.log("SEND");
             // find out layerName, column (name, vars, draw, order).
             // allow changing layer name?
