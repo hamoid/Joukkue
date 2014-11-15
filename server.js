@@ -37,7 +37,6 @@ io.on('connection', function(socket) {
   console.log('user connected');
 
   var layersSorted = {};
-  var layers = {};
 
   function getUsersInRoom(user, room) {
     var names = [];
@@ -56,31 +55,27 @@ io.on('connection', function(socket) {
   }
 
   function sendLayersToUser() {
-    if(layers[socket.room] == undefined) {
-      layers[socket.room] = {};
-      dbLayers.find({ room: socket.room }, function(err, layerData) {
-        if (layerData.length > 0) {
-          for(var i in layerData) {
-            var n = layerData[i].name;
-            layers[socket.room][n] = {
-              name: n,
-              vars: layerData[i].vars,
-              draw: layerData[i].draw
-            };
-          }
+    var layers = {};
+    dbLayers.find({ room: socket.room }, function(err, layerData) {
+      if (layerData.length > 0) {
+        for(var i in layerData) {
+          var n = layerData[i].name;
+          layers[n] = {
+            name: n,
+            vars: layerData[i].vars,
+            draw: layerData[i].draw
+          };
         }
-        dbSorted.findOne({ room: socket.room }, function(err, sortedData) {
-          if(sortedData && sortedData.names) {
-            layersSorted[socket.room] = sortedData.names;
-          } else {
-            layersSorted[socket.room] = [];
-          }
-          socket.emit('allLayers', layersSorted[socket.room], layers[socket.room]);
-        });
+      }
+      dbSorted.findOne({ room: socket.room }, function(err, sortedData) {
+        if(sortedData && sortedData.names) {
+          layersSorted[socket.room] = sortedData.names;
+        } else {
+          layersSorted[socket.room] = [];
+        }
+        socket.emit('allLayers', layersSorted[socket.room], layers);
       });
-    } else {
-      socket.emit('allLayers', layersSorted[socket.room], layers[socket.room]);
-    }
+    });
   }
 
   socket.on('addUser', function(username) {
@@ -126,6 +121,7 @@ io.on('connection', function(socket) {
   socket.on('vars', function(name, obj) {
     dbLayers.update(
       { room: socket.room, name: name },
+      // error: it replaces vars, instead of mixing
       { $set: { room: socket.room, name: name, vars: obj } },
       { upsert: true },
       function(err, numReplaced, newDoc) {
@@ -173,7 +169,6 @@ io.on('connection', function(socket) {
           { $set: { room: socket.room, names: layersSorted[socket.room] } },
           { upsert: true },
           function(err, numReplaced, newDoc) {
-            delete layers[socket.room][name];
             console.log('update dbSorted', name, err, numReplaced, newDoc);
             io.to(socket.room).emit('remove', name, layersSorted[socket.room]);
           }
