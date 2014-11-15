@@ -119,10 +119,18 @@ io.on('connection', function(socket) {
   });
 
   socket.on('vars', function(name, obj) {
+    var updateObj = {
+      room: socket.room,
+      name: name
+    }
+    // By doing this we avoid overwriting the whole 'vars' in DB,
+    // we merge the new vars with the existing ones.
+    Object.getOwnPropertyNames(obj).forEach(function(k) {
+      updateObj['vars.' + k] = obj[k];
+    });
     dbLayers.update(
       { room: socket.room, name: name },
-      // error: it replaces vars, instead of mixing
-      { $set: { room: socket.room, name: name, vars: obj } },
+      { $set: updateObj },
       { upsert: true },
       function(err, numReplaced, newDoc) {
         console.log('vars', name, err, numReplaced, newDoc);
