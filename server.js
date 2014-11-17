@@ -1,11 +1,9 @@
 // database - https://github.com/louischatriot/nedb
 
 var Datastore = require('nedb')
-, dbLayers = new Datastore({ filename: 'layers.db', autoload: true })
-, dbSorted = new Datastore({ filename: 'sorted.db', autoload: true });
+, dbLayers = new Datastore({ filename: 'layers.db', autoload: true });
 
 dbLayers.persistence.setAutocompactionInterval(300 * 1000);
-dbSorted.persistence.setAutocompactionInterval(300 * 1000);
 
 // web server
 
@@ -26,7 +24,7 @@ app.get('/*.(js|css|png)', function(req, res) {
 var server = app.listen(3000, function () {
   var host = server.address().address
   var port = server.address().port
-  console.log('CreativeCodeChat listening at http://%s:%s', host, port)
+  console.log('Joukkue listening at http://%s:%s', host, port)
 });
 
 // socket.io
@@ -35,8 +33,6 @@ var io = require('socket.io').listen(server);
 
 io.on('connection', function(socket) {
   console.log('user connected');
-
-  var layersSorted = {};
 
   function getUsersInRoom(user, room) {
     var names = [];
@@ -63,18 +59,12 @@ io.on('connection', function(socket) {
           layers[n] = {
             name: n,
             vars: layerData[i].vars,
-            draw: layerData[i].draw
+            draw: layerData[i].draw,
+            depth: layerData[i].depth
           };
         }
       }
-      dbSorted.findOne({ room: socket.room }, function(err, sortedData) {
-        if(sortedData && sortedData.names) {
-          layersSorted[socket.room] = sortedData.names;
-        } else {
-          layersSorted[socket.room] = [];
-        }
-        socket.emit('allLayers', layersSorted[socket.room], layers);
-      });
+      socket.emit('allLayers', layers);
     });
   }
 
@@ -86,9 +76,7 @@ io.on('connection', function(socket) {
     // to you
     socket.emit('say', 'SERVER', 'Hi ' + socket.username + '!\n'
                 + 'You are in the ' + socket.room + ' room '
-                + getUsersInRoom(socket.username, socket.room) + '.\n'
-                + 'Use cc.joinRoom("roomName") to change rooms.\n'
-                + 'Type cc.help() if you need it :)');
+                + getUsersInRoom(socket.username, socket.room));
     // to room
     socket.to(socket.room).emit('say', 'SERVER', socket.username + ' is here');
 
@@ -99,7 +87,7 @@ io.on('connection', function(socket) {
 	socket.on('joinRoom', function(newroom){
     // to you
 		socket.emit('say', 'SERVER',
-                'Your are now in the ' + newroom + ' room '
+                'You are now in the ' + newroom + ' room '
                 + getUsersInRoom(socket.username, newroom) + '.\n');
 
     // to old room
@@ -118,90 +106,49 @@ io.on('connection', function(socket) {
     socket.broadcast.to(socket.room).emit('say', socket.username, msg);
   });
 
-  socket.on('vars', function(name, obj) {
-    var updateObj = {
-      room: socket.room,
-      name: name
-    }
-    // By doing this we avoid overwriting the whole 'vars' in DB,
-    // we merge the new vars with the existing ones.
-    Object.getOwnPropertyNames(obj).forEach(function(k) {
-      updateObj['vars.' + k] = obj[k];
-    });
+  socket.on('vars', function(name, vars) {
     dbLayers.update(
       { room: socket.room, name: name },
-      { $set: updateObj },
+      { $set: { room: socket.room, name: name, vars: vars } },
       { upsert: true },
       function(err, numReplaced, newDoc) {
         console.log('vars', name, err, numReplaced, newDoc);
-        io.to(socket.room).emit('vars', name, obj);
+        io.to(socket.room).emit('vars', name, vars);
       }
     );
   });
 
   socket.on('draw', function(name, func) {
-    if(layersSorted[socket.room].indexOf(name) == -1) {
-      layersSorted[socket.room].push(name);
-    }
     dbLayers.update(
       { room:socket.room, name: name },
       { $set: { room: socket.room, name: name, draw: func } },
       { upsert: true },
       function(err, numReplaced, newDoc) {
         console.log('update dbLayers', name, err, numReplaced, newDoc);
-        dbSorted.update(
-          { room:socket.room },
-          { $set: { room: socket.room, names: layersSorted[socket.room] } },
-          { upsert: true },
-          function(err, numReplaced, newDoc) {
-            console.log('update dbSorted', name, err, numReplaced, newDoc);
-            io.to(socket.room).emit('draw', name, func, layersSorted[socket.room]);
-          }
-        );
+        io.to(socket.room).emit('draw', name, func);
       }
     );
   });
 
   socket.on('remove', function(name) {
-    var idx = layersSorted[socket.room].indexOf(name);
-    if(idx != -1) {
-      layersSorted[socket.room].splice(idx, 1);
-    }
     dbLayers.remove(
       { room:socket.room, name: name },
       { },
       function(err, numRemoved) {
         console.log("remove dbLayers", err, numRemoved);
-        dbSorted.update(
-          { room:socket.room },
-          { $set: { room: socket.room, names: layersSorted[socket.room] } },
-          { upsert: true },
-          function(err, numReplaced, newDoc) {
-            console.log('update dbSorted', name, err, numReplaced, newDoc);
-            io.to(socket.room).emit('remove', name, layersSorted[socket.room]);
-          }
-        );
+        io.to(socket.room).emit('remove', name);
       }
     );
   });
 
   socket.on('depth', function(name, dep) {
-    dep = Math.max(dep, 0);
-    dep = Math.min(dep, layersSorted[socket.room].length - 1)
-
-    var idx = layersSorted[socket.room].indexOf(name);
-    if(idx != -1) {
-      layersSorted[socket.room].splice(idx, 1);
-    }
-    layersSorted[socket.room].splice(Math.floor(dep), 0, name);
-
-    dbSorted.update(
+    dbLayers.update(
       { room:socket.room },
-      { $set: { room: socket.room, names: layersSorted[socket.room] } },
+      { $set: { room: socket.room, name: name, depth: dep  } },
       { upsert: true },
       function(err, numReplaced, newDoc) {
-        console.log('update dbSorted', name, err, numReplaced, newDoc);
-        io.to(socket.room).emit('depth', name, dep, layersSorted[socket.room]);
+        console.log('update dbLayers', name, err, numReplaced, newDoc);
+        io.to(socket.room).emit('depth', name, dep);
       }
     );
   });

@@ -1,51 +1,36 @@
 <!doctype html>
 <html>
     <head>
-        <title>CreativeCodeChat</title>
+        <title>Joukkue</title>
         <link rel='stylesheet' href='/beauty.css' type='text/css' />
     </head>
     <body>
-        <p id="footer"><a href="https://github.com/hamoid/creativecodechat">CreativeCodeChat</a> by Abe Pazos</p>
+        <div id="leftBackground"></div>
 
         <table class="grid">
-            <tr>
-                <th>name</th>
+            <tr id="thead">
                 <th>vars</th>
                 <th>draw</th>
                 <th>order</th>
             </tr>
-
-            <tr class="r1 editable">
-                <td id="bg_name" class="c1" contentEditable="true">bg</td>
-                <td id="bg_vars" class="c2" contentEditable="true"></td>
-                <td id="bg_draw" class="c3" contentEditable="true">background(0);</td>
-                <td id="bg_sort" class="c4" contentEditable="true">0</td>
+            <tr id="footer">
+                <td colspan="3">
+                    <a href="https://github.com/hamoid/joukkue">joukkue</a>
+                    by <a href="http://hamoid.com">aBe</a>
+                </td>
             </tr>
-
-            <tr class="r2 editable">
-                <td class="c1" contentEditable="true">cir</td>
-                <td class="c2" contentEditable="true">{x:1, y:1}</td>
-                <td class="c3" contentEditable="true">ellipse(width/2, height/2, d.x, d.y);</td>
-                <td class="c4" contentEditable="true">1</td>
+            <tr id="commands">
+                <td colspan="3">
+                    (N)ew layer - (H)elp - (P)ause animation
+                    <input id="cmd" type="text" readonly/>
+                </td>
             </tr>
-
-            <tr class="r3 editable editing">
-                <td class="c1" contentEditable="true">lines</td>
-                <td class="c2" contentEditable="true">{x:[], y:[]}</td>
-                <td class="c3" contentEditable="true">for(var i=0; i&lt;x.width; i++) {
-                    point(d.x[i], d.x[i]);
-                    }</td>
-                <td class="c4" contentEditable="true">2</td>
-            </tr>
-
         </table>
 
-        <script src="/jquery-2.1.1.min.js"></script>
         <script src="/p5.min.js"></script>
         <script src="/p5.sound.min.js"></script>
+        <script src="/jquery-2.1.1.min.js"></script>
         <script src="/socket.io-1.2.0.js"></script>
         <script src="/client.js"></script>
-
     </body>
 </html>
-

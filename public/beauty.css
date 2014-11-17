@@ -8,18 +8,35 @@ html, body {
 body {
   background-color:#3B3F41;
   color:#DACA98;
+  min-height:540px;
   font-family:monospace;
 }
 a {
   color:#DACA98;
 }
+canvas {
+  z-index:100;
+  position:absolute;
+}
+input {
+  background-color:inherit;
+  border:0;
+}
 
 /* by id */
 
 #footer {
+}
+#commands {
+  display:none;
+}
+#leftBackground {
+  z-index:1;
   position:absolute;
+  width:540px;
+  top:0px;
   bottom:0px;
-  right:10px;
+  background-color:black;
 }
 
 /* table.grid */
@@ -31,7 +48,10 @@ table.grid {
   font-family:monospace;
   font-size:9pt;
   color:#999;
-  margin-left:600px;
+  margin-left:540px;
+}
+table.grid tr {
+  background-color:#333333;
 }
 table.grid td,
 table.grid th {
@@ -39,34 +59,11 @@ table.grid th {
   vertical-align:top;
   text-align:left;
 }
-table.grid td.c1 {
-  width: 70px;
-}
-table.grid td.c2 {
-  width: 25%;
-}
-table.grid td.c4 {
-  width: 40px;
-}
-table.grid textarea,
-table.grid input {
-  background-color:inherit;
-  width:100%;
-  border:none;
-  outline:none;
-  font-family:monospace;
-  font-size:9pt;
-  color:#999;
-  vertical-align:top;
-}
-table.grid textarea {
-  height:60px;
-}
 table.grid tr.editing {
   background-color:#AAA;
 }
-table.grid tr.editing td,
-table.grid tr.editing textarea,
-table.grid tr.editing input {
+table.grid tr.editing td {
   color:black;
 }
+
+/* other */

@@ -1,45 +1,14 @@
-// an graphical interface will make this much simpler.
-// even if there's no autocomplete.
-// choose=click, list&print not necessary (visible already)
-// vars&draw=typing in box + ctrl+enter
-// remove=ctrl+del
-// have field for author, name, depth
-
-// arrays get holes when you delete! not good.
-// newest approach:
-// currentLayer = "cir"
-// layers = { bg: {}, cir: {}, bla: {}}  (unsorted) +
-// layerOrder = ["bg", "cir", "bla"]
-// both must be saved on server side
-
-var CreativeCodeChat = function() {
+var Joukkue = function() {
   this.socket = io();
-
   this.layers = {};
   this.layersSorted = [];
   this.currentLayer = undefined;
+  this.animPlaying = true;
 
   this.msg = {
-    undefinedLayer: 'Call cc.choose("someLayer"); first',
     layerNotFound:  'Layer %s not found, but I will keep my eyes open.',
     layerCrashed:   'Layer %s crashed',
-    currentLayerIs: '%s is now the current layer',
-    drawHowto:      'use: cc.draw(function(d) { line(d.x, d.y, 0, 0); })',
-    depthHowto:     'use: cc.depth("layerName", layerDepth)',
-    varsHowto:      'use: cc.vars({ x:10, y:10 })',
-    chooseHowto:    'use: cc.choose("layerName")',
-    help:           'CreativeCodeChat uses p5.js and is based on layers.\n'
-    + 'These are the available commands:\n'
-    + '  cc.choose("layerName")  // select existing or new layer to work on\n'
-    + '  cc.list()               // list existing layer names\n'
-    + '  cc.print()              // print content of selected layer\n'
-    + '  cc.vars({ x:0, y:0 })   // set properties of selected layer\n'
-    + '  cc.draw(function(d) { line(d.x, d.y, 100, 100); }) // set draw function of selected layer\n'
-    + '  cc.remove()             // get rid of selected layer\n'
-    + '  cc.depth(3)             // set z depth of selected layer\n'
-    + '  cc.say("hello coders!") // talk to other players\n'
-    + '  cc.joinRoom("roomName") // go play to a different room',
-    welcome:        'Welcome to CreativeCodeChat v0.1 - https://github.com/hamoid/creativecodechat',
+    welcome:        'Welcome to Joukkue v0.1 - https://github.com/hamoid/joukkue',
     prompt:         'How should we call you today?',
     promptB:        'How should we call you today? (letters / numbers only)',
   };
@@ -57,75 +26,69 @@ var CreativeCodeChat = function() {
         question = _this.msg.promptB;
       }
       _this.socket.emit('addUser', name);
-    }, 2000);
+    }, 1000);
   });
 
   this.socket.on('say', function(username, msg){
     console.log(username + ": " + msg);
   });
 
-  this.socket.on('vars', function(name, obj) {
-    var txt = JSON.stringify(obj);
-    console.log(name + ".vars = " + txt);
+  this.socket.on('vars', function(name, html) {
+    var id = '#' + name + '_vars';
+
+    $(id).html(html);
+
     _this.layers[name] = _this.layers[name] || { name: name };
-    _this.layers[name].vars = _this.layers[name].vars || {};
-    Object.getOwnPropertyNames(obj).forEach(function(k) {
-      _this.layers[name].vars[k] = obj[k];
-    });
-    $('#' + name + '_vars').text(txt);
+
+    var txt = $(id).text();
+    eval("var obj = " + (txt || "{}"));
+    _this.layers[name].vars = obj;
   });
 
-  this.socket.on('draw', function(name, func, lyrSorted) {
-    console.log(name + '.draw = ' + func);
-    eval("var f = " + func);
+  this.socket.on('draw', function(name, html) {
+    var id = '#' + name + '_draw';
+
+    $(id).html(html);
+
     _this.layers[name] = _this.layers[name] || { name: name };
+
+    var txt = $(id).text();
+    eval("var f = function(d) { " + txt + " }");
     _this.layers[name].draw = f;
-
-    _this.layersSorted = lyrSorted;
-    $('#' + name + '_draw').text(func);
+    _this.buildLayersSorted();
   });
 
-  this.socket.on('remove', function(name, lyrSorted) {
-    console.log('remove ', name);
-    _this.layersSorted = lyrSorted;
+  this.socket.on('remove', function(name) {
     delete _this.layers[name];
+    _this.buildLayersSorted();
     $('#' + name + '_draw').parent().remove();
   });
 
-  this.socket.on('depth', function(name, dep, lyrSorted) {
-    console.log(name + '.depth = ', dep);
-    _this.layersSorted = lyrSorted;
+  this.socket.on('depth', function(name, dep) {
+    dep = parseFloat(dep) || 666;
+    _this.layers[name].depth = dep;
+    $('#' + name + '_depth').text(dep);
+    _this.buildLayersSorted();
   });
 
-  this.socket.on('allLayers', function(lyrSorted, lyr) {
+
+  this.socket.on('allLayers', function(lyr) {
     $('table.grid tr.editable').remove();
-    var row = 1;
-    var tabindex = 1;
 
-    Object.getOwnPropertyNames(lyr).forEach(function(l) {
-      // make real functions out of strings
-      eval("var f = " + lyr[l].draw);
-      lyr[l].draw = f;
+    for(var l in lyr) {
+      _this.createNewLayer(lyr[l].name, lyr[l].vars, lyr[l].draw, lyr[l].depth);
+      _this.makeLayersFocusable();
 
-      var html = '<tr class="r' + (row++) +' editable">'
-      + _this.fmt('<td id="%s_name" class="c1" tabindex="%s" contentEditable="true">%s</td>', lyr[l].name, tabindex++, lyr[l].name)
-      + _this.fmt('<td id="%s_vars" class="c2" tabindex="%s" contentEditable="true">%s</td>', lyr[l].name, tabindex++, lyr[l].vars ? JSON.stringify(lyr[l].vars) : "")
-      + _this.fmt('<td id="%s_draw" class="c3" tabindex="%s" contentEditable="true">%s</td>', lyr[l].name, tabindex++, lyr[l].draw || "")
-      + _this.fmt('<td id="%s_sort" class="c4" tabindex="%s" contentEditable="true">%s</td>', lyr[l].name, tabindex++, 0)
-      + '</tr>';
+      var drawTxt = $('#' + lyr[l].name + '_draw').text();
+      var varsTxt = $('#' + lyr[l].name + '_vars').text();
 
-      $(html).appendTo('table.grid');
-
-      $("table.grid tr.editable td").focus(function(e) {
-        var t = $(e.currentTarget);
-        $("table.grid tr").removeClass("editing");
-        t.parents("tr").addClass("editing");
-      });
-
-    });
+      // make real function/object out of strings
+      eval("lyr[l].draw = function(d) { " + drawTxt + " }");
+      eval("lyr[l].vars = " + (varsTxt || "{}"));
+    };
 
     _this.layers = lyr;
-    _this.layersSorted = lyrSorted;
+    _this.buildLayersSorted();
   });
 };
 
@@ -133,101 +96,91 @@ var CreativeCodeChat = function() {
 
 // Helpers
 
-CreativeCodeChat.prototype.fmt = function(msg, etc) {
+Joukkue.prototype.fmt = function(msg, etc) {
   var i = 1;
   var args = arguments;
   return msg.replace(/%((%)|s)/g, function (m) { return m[2] || args[i++] })
-}
+};
+Joukkue.prototype.genID = function() {
+  return 'Lxxxxxxxx'.replace(/[xy]/g, function(c) {
+    var r = Math.random()*16|0, v = c == 'x' ? r : (r&0x3|0x8);
+    return v.toString(16);
+  });
+};
+Joukkue.prototype.createNewLayer = function(name, varsHTML, drawHTML, depth) {
+  var html = '<tr class="editable">'
+  + this.fmt('<td id="%s_vars" class="c2" contentEditable="true">%s</td>', name, varsHTML || '')
+  + this.fmt('<td id="%s_draw" class="c3" contentEditable="true">%s</td>', name, drawHTML || '')
+  + this.fmt('<td id="%s_depth" class="c4" contentEditable="true">%s</td>', name, depth || '')
+  + '</tr>';
 
+  $('#footer').before(html);
+  this.makeLayersFocusable();
+  $('#' + name + '_draw').focus();
+};
+Joukkue.prototype.buildLayersSorted = function() {
+  var tmp = [];
+  for(var l in this.layers) {
+    tmp.push({
+      name: this.layers[l].name,
+      depth: this.layers[l].depth
+    });
+  };
+  tmp.sort(function(a,b) { return a.depth - b.depth});
+
+  this.layersSorted = [];
+  for (var i=0; i<tmp.length; i++) {
+    this.layersSorted.push(tmp[i].name);
+  }
+};
+Joukkue.prototype.makeLayersFocusable = function() {
+  $('table.grid tr.editable td').focus(function(e) {
+    var t = $(e.currentTarget);
+    $('table.grid tr').removeClass('editing');
+    t.parents('tr').addClass('editing');
+    $('#commands').hide();
+  });
+}
+Joukkue.prototype.hideEditing = function() {
+  $('table.grid tr').removeClass('editing');
+}
+Joukkue.prototype.showCommandBar = function(active) {
+  if(active) {
+    $('#commands').show();
+    $('#cmd').focus();
+  } else {
+    $('#commands').hide();
+  }
+}
 
 
 // Commands
 
-CreativeCodeChat.prototype.list = function() {
-  console.log(this.layersSorted.join(", "));
-  return " . ";
-};
-CreativeCodeChat.prototype.print = function() {
-  if(this.currentLayer == undefined) {
-    return this.msg.undefinedLayer;
-  }
-  return "cc.vars(" + JSON.stringify(this.layers[this.currentLayer].vars) + ");\n\n"
-  + "cc.draw(" + this.layers[this.currentLayer].draw.toString() + ");";
-};
-CreativeCodeChat.prototype.vars = function(obj) {
-  if(this.currentLayer == undefined) {
-    return this.msg.undefinedLayer;
-  }
-  if(arguments.length != 1 || typeof obj !== "object") {
-    return this.msg.varsHowto;
-  }
-  this.socket.emit('vars', this.currentLayer, obj);
-  return " . ";
-};
-
-CreativeCodeChat.prototype.draw = function(func) {
-  if(this.currentLayer == undefined) {
-    return this.msg.undefinedLayer;
-  }
-  if(arguments.length != 1 || typeof func !== "function") {
-    return this.msg.drawHowto;
-  }
-  this.socket.emit('draw', this.currentLayer, func.toString());
-  return " . ";
-}
-
-CreativeCodeChat.prototype.choose = function(name) {
-  if(arguments.length != 1 || typeof name !== "string") {
-    return this.msg.chooseHowto;
-  }
-  this.currentLayer = name;
-  return this.fmt(this.msg.currentLayerIs, name);
-};
-
-CreativeCodeChat.prototype.remove = function() {
-  if(this.currentLayer == undefined) {
-    return this.msg.undefinedLayer;
-  }
-  if(this.layers[this.currentLayer] == undefined) {
-    return this.fmt(this.msg.layerNotFound, this.currentLayer);
-  }
-  this.socket.emit('remove', this.currentLayer);
-  return " . ";
-};
-
-CreativeCodeChat.prototype.depth = function(dep) {
-  if(arguments.length != 1 || typeof dep !== "number") {
-    return this.msg.depthHowto;
-  } else {
-    this.socket.emit('depth', this.currentLayer, dep);
-    return " . ";
-  }
-};
-
-CreativeCodeChat.prototype.say = function(msg) {
+// unneeded. add text input + enter
+Joukkue.prototype.say = function(msg) {
   this.socket.emit('say', msg);
   return " . ";
 };
 
-CreativeCodeChat.prototype.joinRoom = function(roomName) {
+// unneeded. add editable room: text + enter
+Joukkue.prototype.joinRoom = function(roomName) {
   this.socket.emit('joinRoom', roomName);
   return " . ";
 };
 
-CreativeCodeChat.prototype.help = function() {
-  return this.msg.help;
-};
-
-var cc = new CreativeCodeChat();
+var cc = new Joukkue();
 
 
+// welcome message
+
+console.log(cc.msg.welcome);
 
 // p5.js
 
 function setup() {
-  createCanvas(600, 600);
+  createCanvas(540, 540);
   background(0);
-  var img = loadImage("/creativeCodeChatLogo.png", function(i) {
+  var img = loadImage("/joukkue.png", function(i) {
     image(i, width/2-i.width/2, height/2-i.height/2)
   });
 }
@@ -245,42 +198,78 @@ function draw() {
   });
 }
 
-// welcome message
-
-console.log(cc.msg.welcome);
-
 // jQuery
 
 $(function() {
-  $("body").focus(function(e) {
-    var t = $(e.currentTarget);
-    //console.log(t);
-    //$("table.grid tr").removeClass("editing");
-    //t.parents("tr").addClass("editing");
-  });
   $("body").click(function(e) {
     if(e.target == e.currentTarget) {
-      $("table.grid tr").removeClass("editing");
+      cc.hideEditing();
+      cc.showCommandBar(false);
     }
   });
   $('table.grid').keydown(function(e) {
+    var idParts = e.target.id.split('_');
+    var layerName = idParts[0];
+    var varType = idParts[1];
+    var contentHTML = $(e.target).html();
     var k = e.keyCode || e.charCode;
-    //console.log(e);
+
+    //var withBRs = $('#brText').html();
+    //var textWithBreaks = withBRs.replace(/\<br\>/gi,'\r');
+    //$('#area').text(textWithBreaks);
+
     if(e.ctrlKey && (k == 10 || k == 13)) {
-      console.log("SEND");
-      // find out layerName, column (name, vars, draw, order).
-      // allow changing layer name?
-      // alt+shift arrows
-      // ESC to undo your changes and accept other changes
-      // always have empty layer to allow creating
-    }
-    if( e.ctrlKey && (k == 8 || k == 46 )) {
-      console.log("DEL");
+      // CTRL + ENTER
+      cc.socket.emit(varType, layerName, contentHTML);
+    } else if( e.ctrlKey && (k == 8 || k == 46 )) {
+      // CTRL + DEL
+      cc.socket.emit('remove', layerName);
       return false;
     }
   });
+  $('#cmd').keydown(function(e) {
+    var k = e.keyCode || e.charCode;
+    switch(k) {
 
+      case 78: // N
+        var nextDepth = 0;
+        for(var l in cc.layers) {
+          if(cc.layers[l].depth > nextDepth) {
+            nextDepth = Math.floor(cc.layers[l].depth);
+          }
+        };
+        nextDepth += 2;
+        cc.createNewLayer(cc.genID(), "", "", nextDepth);
+        break;
+
+      case 80: // P
+        cc.animPlaying = !cc.animPlaying;
+        if(cc.animPlaying) {
+          loop();
+        } else {
+          noLoop();
+        }
+        break;
+    }
+  });
+  $('body').keydown(function(e) {
+    var k = e.keyCode || e.charCode;
+    if(k == 27) {
+      cc.hideEditing();
+      cc.showCommandBar(true);
+    }
+  });
+
+  // add cursor keys to move around grid
+  //   enter to edit
+  //   m to move
+  //   r to change room
+  //   space to toggle, show disabled
+  // hide depth. use shortcuts (top,bottom,down,up)
+  // ESC to undo your changes and accept other changes
   // don't change layer if you are editing it
   // show where people are editing
   // but show that someone changed it, and allow to reload
+  // show chat
+  // show participants
 })
