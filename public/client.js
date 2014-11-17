@@ -171,7 +171,7 @@ Joukkue.prototype.joinRoom = function(roomName) {
 var cc = new Joukkue();
 
 
-// welcome message
+// welcome message (remove, no more console)
 
 console.log(cc.msg.welcome);
 
@@ -214,10 +214,6 @@ $(function() {
     var contentHTML = $(e.target).html();
     var k = e.keyCode || e.charCode;
 
-    //var withBRs = $('#brText').html();
-    //var textWithBreaks = withBRs.replace(/\<br\>/gi,'\r');
-    //$('#area').text(textWithBreaks);
-
     if(e.ctrlKey && (k == 10 || k == 13)) {
       // CTRL + ENTER
       cc.socket.emit(varType, layerName, contentHTML);
@@ -259,17 +255,4 @@ $(function() {
       cc.showCommandBar(true);
     }
   });
-
-  // add cursor keys to move around grid
-  //   enter to edit
-  //   m to move
-  //   r to change room
-  //   space to toggle, show disabled
-  // hide depth. use shortcuts (top,bottom,down,up)
-  // ESC to undo your changes and accept other changes
-  // don't change layer if you are editing it
-  // show where people are editing
-  // but show that someone changed it, and allow to reload
-  // show chat
-  // show participants
 })
