@@ -4,13 +4,13 @@ Work in progress.
 
 ## To do
 
-* Show layer crashes in chat.
+* Show room name, your name, participants
+* Allow changing rooms (show max 10 random rooms?)
+
 * Add cursors to move around grid
   * Use ENTER to edit
   * M to move
   * SPACE to toggle layer on/off
-* Show room name and participants
-* Allow changing rooms (show max 10 random rooms?)
 * Hide depth fields. Use GUI.
 * If someone edits same cell as you, indicate changed (but don't rewrite your work without notice)
   * ESC cancels your edit (jumps between grid and chat)
@@ -26,3 +26,5 @@ Work in progress.
 * Give automatic name to user, allow renaming
   * Create name generator
 * Show chat in GUI
+* Show layer crashes in chat.
+* Chat, highlight on focus.

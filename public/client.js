@@ -7,8 +7,7 @@ var Joukkue = function() {
   this.reservedVSpace = 0;
 
   this.msg = {
-    layerNotFound:  'Layer %s not found, but I will keep my eyes open.',
-    layerCrashed:   'Layer %s crashed',
+    layerCrashed:   'Layer %s crashed with %s',
     play:           'play animation',
     pause:          'pause animation'
   };
@@ -22,8 +21,7 @@ var Joukkue = function() {
   });
 
   this.socket.on('say', function(username, msg){
-    $('#row_chatView').append(username + ': ' + msg + '<br/>');
-    $('#row_chatView').scrollTop($('#row_chatView')[0].scrollHeight);
+    _this.addToChat(username + ': ' + msg);
   });
 
   this.socket.on('vars', function(name, html) {
@@ -54,6 +52,9 @@ var Joukkue = function() {
   this.socket.on('remove', function(name) {
     delete _this.layers[name];
     _this.buildLayersSorted();
+    $('#' + name + '_draw').unbind();
+    $('#' + name + '_vars').unbind();
+    $('#' + name + '_depth').unbind();
     $('#' + name + '_draw').parent().remove();
   });
 
@@ -70,7 +71,6 @@ var Joukkue = function() {
 
     for(var l in lyr) {
       _this.createNewLayer(lyr[l].name, lyr[l].vars, lyr[l].draw, lyr[l].depth);
-      _this.makeLayersFocusable();
 
       var drawTxt = $('#' + lyr[l].name + '_draw').text();
       var varsTxt = $('#' + lyr[l].name + '_vars').text();
@@ -86,61 +86,21 @@ var Joukkue = function() {
 };
 
 
-
-// Helpers
+// String
 
 Joukkue.prototype.fmt = function(msg, etc) {
   var i = 1;
   var args = arguments;
   return msg.replace(/%((%)|s)/g, function (m) { return m[2] || args[i++] })
 };
+
 Joukkue.prototype.genID = function() {
   return 'Lxxxxxxxx'.replace(/[xy]/g, function(c) {
     var r = Math.random()*16|0, v = c == 'x' ? r : (r&0x3|0x8);
     return v.toString(16);
   });
 };
-Joukkue.prototype.createNewLayer = function(name, varsHTML, drawHTML, depth) {
-  var html = '<tr class="editable">'
-  + this.fmt('<td id="%s_vars" class="c2" contentEditable="true">%s</td>', name, varsHTML || '')
-  + this.fmt('<td id="%s_draw" class="c3" contentEditable="true">%s</td>', name, drawHTML || '')
-  + this.fmt('<td id="%s_depth" class="c4" contentEditable="true">%s</td>', name, depth || '')
-  + '</tr>';
 
-  $('#grid').append(html);
-  this.makeLayersFocusable();
-  $('#' + name + '_draw').focus();
-};
-Joukkue.prototype.buildLayersSorted = function() {
-  var tmp = [];
-  for(var l in this.layers) {
-    tmp.push({
-      name: this.layers[l].name,
-      depth: this.layers[l].depth
-    });
-  };
-  tmp.sort(function(a,b) { return a.depth - b.depth});
-
-  this.layersSorted = [];
-  for (var i=0; i<tmp.length; i++) {
-    this.layersSorted.push(tmp[i].name);
-  }
-};
-Joukkue.prototype.makeLayersFocusable = function() {
-  $('#grid tr.editable td').focus(function(e) {
-    var t = $(e.currentTarget);
-    $('#grid tr').removeClass('editing');
-    t.parent('tr').addClass('editing');
-    $('#thead').remove();
-    t.parent('tr').before('<tr id="thead"><th>vars</th><th>draw</th><th>order</th></tr>');
-  });
-}
-Joukkue.prototype.onWindowResize = function() {
-  $('#row_grid').height($(window).height() - this.reservedVSpace);
-}
-Joukkue.prototype.hideEditing = function() {
-  $('#grid tr').removeClass('editing');
-}
 Joukkue.prototype.randomName = function() {
   var g1 = ['a', 'e', 'i', 'o', 'u', 'y'];
   var g2 = ['b', 'br', 'bl', 'c', 'cr', 'cl',
@@ -166,15 +126,72 @@ Joukkue.prototype.randomName = function() {
   return name;
 }
 
-// Commands
 
-// unneeded. add text input + enter
-Joukkue.prototype.say = function(msg) {
-  this.socket.emit('say', msg);
-  return " . ";
+// DOM
+
+Joukkue.prototype.addToChat = function(msg) {
+  $('#row_chatView').append(msg + '<br/>');
+  $('#row_chatView').scrollTop($('#row_chatView')[0].scrollHeight);
 };
 
-// unneeded. add editable room: text + enter
+Joukkue.prototype.createNewLayer = function(name, varsHTML, drawHTML, depth) {
+  var html = '<tr class="editable">'
+  + this.fmt('<td id="%s_vars" class="c2" contentEditable="true">%s</td>', name, varsHTML || '')
+  + this.fmt('<td id="%s_draw" class="c3" contentEditable="true">%s</td>', name, drawHTML || '')
+  + this.fmt('<td id="%s_depth" class="c4" contentEditable="true">%s</td>', name, depth || '')
+  + '</tr>';
+
+  $('#grid').append(html);
+
+  $('#' + name + '_vars').focus(this.onFocusEditable).blur(this.onBlurEditable);
+  $('#' + name + '_draw').focus(this.onFocusEditable).blur(this.onBlurEditable);
+  $('#' + name + '_depth').focus(this.onFocusEditable).blur(this.onBlurEditable);
+  //this.makeLayersFocusable();
+  $('#' + name + '_draw').focus();
+};
+
+Joukkue.prototype.buildLayersSorted = function() {
+  var tmp = [];
+  for(var l in this.layers) {
+    tmp.push({
+      name: this.layers[l].name,
+      depth: this.layers[l].depth
+    });
+  };
+  tmp.sort(function(a,b) { return a.depth - b.depth});
+
+  this.layersSorted = [];
+  for (var i=0; i<tmp.length; i++) {
+    this.layersSorted.push(tmp[i].name);
+  }
+};
+
+Joukkue.prototype.onBlurEditable = function(e) {
+  $(e.currentTarget).parent('tr').removeClass('editing');
+};
+Joukkue.prototype.onFocusEditable = function(e) {
+  var t = $(e.currentTarget);
+  t.parent('tr').addClass('editing');
+
+  $('#thead').remove();
+  if(t.closest($('#grid')).length > 0) {
+    t.parent('tr').before('<tr id="thead"><th>vars</th><th>draw</th><th>order</th></tr>');
+  }
+};
+
+
+Joukkue.prototype.onWindowResize = function() {
+  $('#row_grid').height($(window).height() - this.reservedVSpace);
+}
+
+Joukkue.prototype.hideEditing = function() {
+  $('#grid tr').removeClass('editing');
+}
+
+
+// Commands (DEPRECATED)
+
+// add editable room: text + enter
 Joukkue.prototype.joinRoom = function(roomName) {
   this.socket.emit('joinRoom', roomName);
   return " . ";
@@ -191,6 +208,7 @@ function setup() {
     image(i, width/2-i.width/2, height/2-i.height/2)
   });
 }
+
 function draw() {
   cc.layersSorted.forEach(function(n) {
     try {
@@ -198,7 +216,7 @@ function draw() {
       cc.layers[n].draw(cc.layers[n].vars);
       pop();
     } catch(e) {
-      console.log(cc.fmt(cc.msg.layerCrashed, n), e);
+      cc.addToChat(cc.fmt(cc.msg.layerCrashed, n, e));
       // if crash, remove from layersSorted to avoid rendering
       cc.layersSorted.splice(cc.layersSorted.indexOf(n), 1);
     }
@@ -208,14 +226,11 @@ function draw() {
 // jQuery
 
 $(function() {
-  $("body").click(function(e) {
-    if(e.target == e.currentTarget) {
-      cc.hideEditing();
-    }
-  });
+
   $(window).resize(function() {
     cc.onWindowResize();
   });
+
   $('#cmd_play_pause').click(function() {
     cc.animPlaying = !cc.animPlaying;
     if(cc.animPlaying) {
@@ -226,6 +241,7 @@ $(function() {
       $('#cmd_play_pause').val(cc.msg.play);
     }
   });
+
   $('#cmd_new_layer').click(function() {
     var nextDepth = 0;
     for(var l in cc.layers) {
@@ -236,6 +252,7 @@ $(function() {
     nextDepth += 2;
     cc.createNewLayer(cc.genID(), "", "", nextDepth);
   });
+
   $('#grid').keydown(function(e) {
     var idParts = e.target.id.split('_');
     var layerName = idParts[0];
@@ -252,6 +269,7 @@ $(function() {
       return false;
     }
   });
+
   $('#row_chatBox').keydown(function(e) {
     var k = e.keyCode || e.charCode;
     if(k == 10 || k == 13) {
@@ -260,12 +278,16 @@ $(function() {
       e.preventDefault();
     }
   });
+
+  $('#row_chatBox').focus(cc.onFocusEditable).blur(cc.onBlurEditable);
+
   $('body').keydown(function(e) {
     var k = e.keyCode || e.charCode;
     if(k == 27) {
       cc.hideEditing();
     }
   });
+
   cc.reservedVSpace = $('#row_menu').outerHeight(true) +
     $('#row_chatView').outerHeight(true) +
     $('#row_chatBox').outerHeight(true) + 8;

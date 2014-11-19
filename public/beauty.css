@@ -89,9 +89,8 @@ input {
   vertical-align:top;
   text-align:left;
 }
-#grid tr.editing {
-  background-color:#AAA;
-}
-#grid tr.editing td {
+
+tr.editing td {
+  background-color:#AAA !important;
   color:black;
 }
