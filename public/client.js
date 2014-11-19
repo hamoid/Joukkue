@@ -4,11 +4,11 @@ var Joukkue = function() {
   this.layersSorted = [];
   this.currentLayer = undefined;
   this.animPlaying = true;
+  this.reservedVSpace = 0;
 
   this.msg = {
     layerNotFound:  'Layer %s not found, but I will keep my eyes open.',
     layerCrashed:   'Layer %s crashed',
-    welcome:        'Welcome to Joukkue v0.1 - https://github.com/hamoid/joukkue',
     play:           'play animation',
     pause:          'pause animation'
   };
@@ -22,7 +22,8 @@ var Joukkue = function() {
   });
 
   this.socket.on('say', function(username, msg){
-    console.log(username + ": " + msg);
+    $('#row_chatView').append(username + ': ' + msg + '<br/>');
+    $('#row_chatView').scrollTop($('#row_chatView')[0].scrollHeight);
   });
 
   this.socket.on('vars', function(name, html) {
@@ -106,7 +107,7 @@ Joukkue.prototype.createNewLayer = function(name, varsHTML, drawHTML, depth) {
   + this.fmt('<td id="%s_depth" class="c4" contentEditable="true">%s</td>', name, depth || '')
   + '</tr>';
 
-  $('#footer').before(html);
+  $('#grid').append(html);
   this.makeLayersFocusable();
   $('#' + name + '_draw').focus();
 };
@@ -133,6 +134,9 @@ Joukkue.prototype.makeLayersFocusable = function() {
     $('#thead').remove();
     t.parent('tr').before('<tr id="thead"><th>vars</th><th>draw</th><th>order</th></tr>');
   });
+}
+Joukkue.prototype.onWindowResize = function() {
+  $('#row_grid').height($(window).height() - this.reservedVSpace);
 }
 Joukkue.prototype.hideEditing = function() {
   $('#grid tr').removeClass('editing');
@@ -178,11 +182,6 @@ Joukkue.prototype.joinRoom = function(roomName) {
 
 var cc = new Joukkue();
 
-
-// welcome message (remove, no more console)
-
-console.log(cc.msg.welcome);
-
 // p5.js
 
 function setup() {
@@ -215,7 +214,7 @@ $(function() {
     }
   });
   $(window).resize(function() {
-    $('#row_grid').height($(window).height() - 171);
+    cc.onWindowResize();
   });
   $('#cmd_play_pause').click(function() {
     cc.animPlaying = !cc.animPlaying;
@@ -253,10 +252,23 @@ $(function() {
       return false;
     }
   });
+  $('#row_chatBox').keydown(function(e) {
+    var k = e.keyCode || e.charCode;
+    if(k == 10 || k == 13) {
+      cc.socket.emit('say', $('#row_chatBox').text());
+      $('#row_chatBox').text('');
+      e.preventDefault();
+    }
+  });
   $('body').keydown(function(e) {
     var k = e.keyCode || e.charCode;
     if(k == 27) {
       cc.hideEditing();
     }
   });
-})
+  cc.reservedVSpace = $('#row_menu').outerHeight(true) +
+    $('#row_chatView').outerHeight(true) +
+    $('#row_chatBox').outerHeight(true) + 8;
+
+  cc.onWindowResize();
+});

@@ -1,9 +1,10 @@
-# Joukkue
+# Joukkue - Collaborative Creative Coding
 
-Work in progress. Unfinished. Incomplete. But syncs already!
+Work in progress.
 
 ## To do
 
+* Show layer crashes in chat.
 * Add cursors to move around grid
   * Use ENTER to edit
   * M to move
@@ -12,10 +13,11 @@ Work in progress. Unfinished. Incomplete. But syncs already!
 * Allow changing rooms (show max 10 random rooms?)
 * Hide depth fields. Use GUI.
 * If someone edits same cell as you, indicate changed (but don't rewrite your work without notice)
-  * ESC cancels your edit
+  * ESC cancels your edit (jumps between grid and chat)
   * CTRL+ENTER sends your edit
 * Show where people are editing
-* Show chat in GUI
+* Allow tempo tapping to set var for loops. also offset.
+* Indicate crashed layer in grid
 
 ## Done
 
@@ -23,3 +25,4 @@ Work in progress. Unfinished. Incomplete. But syncs already!
 * When entering the chat room, send all layers in that room
 * Give automatic name to user, allow renaming
   * Create name generator
+* Show chat in GUI

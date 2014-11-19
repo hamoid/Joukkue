@@ -103,7 +103,7 @@ io.on('connection', function(socket) {
 	});
 
   socket.on('say', function(msg) {
-    socket.broadcast.to(socket.room).emit('say', socket.username, msg);
+    io.to(socket.room).emit('say', socket.username, msg);
   });
 
   socket.on('vars', function(name, vars) {

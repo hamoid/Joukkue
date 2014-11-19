@@ -28,9 +28,6 @@ input {
 
 /* by id */
 
-#footer {
-}
-
 #leftBackground {
   z-index:1;
   position:absolute;
@@ -46,6 +43,7 @@ input {
   left:540px;
   height:100%;
   width:calc(100% - 540px);
+  border-spacing:2px;
 }
 
 
@@ -60,7 +58,7 @@ input {
 #row_chatView {
   padding: 5px;
   background-color:#333333;
-  margin:1px 2px 0px 2px;
+  margin:1px 2px 0px 0px;
   vertical-align: bottom;
   overflow-y: auto;
   display:block;
@@ -76,6 +74,7 @@ input {
 /* table.grid */
 
 #grid {
+  border-spacing:0px;
   font-family:monospace;
   font-size:9pt;
   color:#999;
