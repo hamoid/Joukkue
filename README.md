@@ -7,6 +7,7 @@ Work in progress.
 * Show room name, your name, participants
 * Allow changing rooms (show max 10 random rooms?)
 
+* Remember which field I was editing, and the selection, so I can restore it after coming back from chat box.
 * Add cursors to move around grid
   * Use ENTER to edit
   * M to move

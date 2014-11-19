@@ -167,13 +167,13 @@ Joukkue.prototype.buildLayersSorted = function() {
 };
 
 Joukkue.prototype.onBlurEditable = function(e) {
+  $('#thead').remove();
   $(e.currentTarget).parent('tr').removeClass('editing');
 };
 Joukkue.prototype.onFocusEditable = function(e) {
   var t = $(e.currentTarget);
   t.parent('tr').addClass('editing');
 
-  $('#thead').remove();
   if(t.closest($('#grid')).length > 0) {
     t.parent('tr').before('<tr id="thead"><th>vars</th><th>draw</th><th>order</th></tr>');
   }
@@ -182,10 +182,6 @@ Joukkue.prototype.onFocusEditable = function(e) {
 
 Joukkue.prototype.onWindowResize = function() {
   $('#row_grid').height($(window).height() - this.reservedVSpace);
-}
-
-Joukkue.prototype.hideEditing = function() {
-  $('#grid tr').removeClass('editing');
 }
 
 
@@ -284,7 +280,7 @@ $(function() {
   $('body').keydown(function(e) {
     var k = e.keyCode || e.charCode;
     if(k == 27) {
-      cc.hideEditing();
+      cc.onBlurEditable();
     }
   });
 
