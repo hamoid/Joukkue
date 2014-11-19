@@ -21,4 +21,5 @@ Work in progress. Unfinished. Incomplete. But syncs already!
 
 * Save layers on server to database on disk
 * When entering the chat room, send all layers in that room
-
+* Give automatic name to user, allow renaming
+  * Create name generator

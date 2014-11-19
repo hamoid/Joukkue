@@ -4,6 +4,7 @@ html, body {
   height: 100%;
 	padding: 0px;
 	margin: 0px;
+  overflow: hidden;
 }
 body {
   background-color:#3B3F41;
@@ -19,17 +20,17 @@ canvas {
   position:absolute;
 }
 input {
-  background-color:inherit;
-  border:0;
+  background-color: #666;
+  color: #DDD;
+  border-color: #AAA;
+  border-radius: 4px;
 }
 
 /* by id */
 
 #footer {
 }
-#commands {
-  display:none;
-}
+
 #leftBackground {
   z-index:1;
   position:absolute;
@@ -39,31 +40,59 @@ input {
   background-color:black;
 }
 
-/* table.grid */
-
-table.grid {
+#right_column {
   position:absolute;
   top:0px;
-  left:0px;
+  left:540px;
+  height:100%;
+  width:calc(100% - 540px);
+}
+
+
+#row_menu {
+  height:20px;
+}
+#row_grid {
+  display:block;
+  overflow:auto;
+  height: calc(100% - 140px);
+}
+#row_chatView {
+  padding: 5px;
+  background-color:#333333;
+  margin:1px 2px 0px 2px;
+  vertical-align: bottom;
+  overflow-y: auto;
+  display:block;
+  height:100px;
+}
+#row_chatBox {
+  padding: 5px;
+  background-color:#333333;
+  margin:1px 2px 0px 2px;
+  height:20px;
+}
+
+/* table.grid */
+
+#grid {
   font-family:monospace;
   font-size:9pt;
   color:#999;
-  margin-left:540px;
+  width:100%;
 }
-table.grid tr {
+#grid tr {
   background-color:#333333;
 }
-table.grid td,
-table.grid th {
+#grid td,
+#grid th {
   padding: 5px;
   vertical-align:top;
   text-align:left;
 }
-table.grid tr.editing {
+#grid tr.editing {
   background-color:#AAA;
 }
-table.grid tr.editing td {
+#grid tr.editing td {
   color:black;
 }
-
-/* other */

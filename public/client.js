@@ -9,8 +9,8 @@ var Joukkue = function() {
     layerNotFound:  'Layer %s not found, but I will keep my eyes open.',
     layerCrashed:   'Layer %s crashed',
     welcome:        'Welcome to Joukkue v0.1 - https://github.com/hamoid/joukkue',
-    prompt:         'How should we call you today?',
-    promptB:        'How should we call you today? (letters / numbers only)',
+    play:           'play animation',
+    pause:          'pause animation'
   };
 
   var _this = this;
@@ -18,15 +18,7 @@ var Joukkue = function() {
   // Socket events
 
   this.socket.on('connect', function() {
-    window.setTimeout(function() {
-      var name = null;
-      var question = _this.msg.prompt;
-      while(name == null || !name.match(/\w+/)) {
-        name = prompt(question)
-        question = _this.msg.promptB;
-      }
-      _this.socket.emit('addUser', name);
-    }, 1000);
+    _this.socket.emit('addUser', _this.randomName());
   });
 
   this.socket.on('say', function(username, msg){
@@ -73,7 +65,7 @@ var Joukkue = function() {
 
 
   this.socket.on('allLayers', function(lyr) {
-    $('table.grid tr.editable').remove();
+    $('#grid tr.editable').remove();
 
     for(var l in lyr) {
       _this.createNewLayer(lyr[l].name, lyr[l].vars, lyr[l].draw, lyr[l].depth);
@@ -134,25 +126,41 @@ Joukkue.prototype.buildLayersSorted = function() {
   }
 };
 Joukkue.prototype.makeLayersFocusable = function() {
-  $('table.grid tr.editable td').focus(function(e) {
+  $('#grid tr.editable td').focus(function(e) {
     var t = $(e.currentTarget);
-    $('table.grid tr').removeClass('editing');
-    t.parents('tr').addClass('editing');
-    $('#commands').hide();
+    $('#grid tr').removeClass('editing');
+    t.parent('tr').addClass('editing');
+    $('#thead').remove();
+    t.parent('tr').before('<tr id="thead"><th>vars</th><th>draw</th><th>order</th></tr>');
   });
 }
 Joukkue.prototype.hideEditing = function() {
-  $('table.grid tr').removeClass('editing');
+  $('#grid tr').removeClass('editing');
 }
-Joukkue.prototype.showCommandBar = function(active) {
-  if(active) {
-    $('#commands').show();
-    $('#cmd').focus();
-  } else {
-    $('#commands').hide();
-  }
-}
+Joukkue.prototype.randomName = function() {
+  var g1 = ['a', 'e', 'i', 'o', 'u', 'y'];
+  var g2 = ['b', 'br', 'bl', 'c', 'cr', 'cl',
+            'd', 'dr', 'f', 'fr', 'g', 'gl',
+            'j', 'k', 'kr', 'l', 'm', 'n',
+            'p', 'pr', 'pl', 's', 't', 'tr', 'v'];
+  var g3 = ['s', 'l', 'n', 'm'];
 
+  var r = function(a) {
+    return a[Math.floor(Math.random() * a.length)];
+  }
+  var name;
+  var rnd = Math.random();
+  if(rnd < 0.25) {
+    name = r(g1) + r(g2) + r(g1) + r(g3);
+  } else if(rnd < 0.5) {
+    name = r(g1) + r(g2) + r(g1) + r(g2) + r(g1);
+  } else if(rnd < 0.5) {
+    name = r(g2) + r(g1) + r(g2) + r(g1);
+  } else {
+    name = r(g2) + r(g1) + r(g2) + r(g1) + r(g3);
+  }
+  return name;
+}
 
 // Commands
 
@@ -204,10 +212,32 @@ $(function() {
   $("body").click(function(e) {
     if(e.target == e.currentTarget) {
       cc.hideEditing();
-      cc.showCommandBar(false);
     }
   });
-  $('table.grid').keydown(function(e) {
+  $(window).resize(function() {
+    $('#row_grid').height($(window).height() - 171);
+  });
+  $('#cmd_play_pause').click(function() {
+    cc.animPlaying = !cc.animPlaying;
+    if(cc.animPlaying) {
+      loop();
+      $('#cmd_play_pause').val(cc.msg.pause);
+    } else {
+      noLoop();
+      $('#cmd_play_pause').val(cc.msg.play);
+    }
+  });
+  $('#cmd_new_layer').click(function() {
+    var nextDepth = 0;
+    for(var l in cc.layers) {
+      if(cc.layers[l].depth > nextDepth) {
+        nextDepth = Math.floor(cc.layers[l].depth);
+      }
+    };
+    nextDepth += 2;
+    cc.createNewLayer(cc.genID(), "", "", nextDepth);
+  });
+  $('#grid').keydown(function(e) {
     var idParts = e.target.id.split('_');
     var layerName = idParts[0];
     var varType = idParts[1];
@@ -223,36 +253,10 @@ $(function() {
       return false;
     }
   });
-  $('#cmd').keydown(function(e) {
-    var k = e.keyCode || e.charCode;
-    switch(k) {
-
-      case 78: // N
-        var nextDepth = 0;
-        for(var l in cc.layers) {
-          if(cc.layers[l].depth > nextDepth) {
-            nextDepth = Math.floor(cc.layers[l].depth);
-          }
-        };
-        nextDepth += 2;
-        cc.createNewLayer(cc.genID(), "", "", nextDepth);
-        break;
-
-      case 80: // P
-        cc.animPlaying = !cc.animPlaying;
-        if(cc.animPlaying) {
-          loop();
-        } else {
-          noLoop();
-        }
-        break;
-    }
-  });
   $('body').keydown(function(e) {
     var k = e.keyCode || e.charCode;
     if(k == 27) {
       cc.hideEditing();
-      cc.showCommandBar(true);
     }
   });
 })
