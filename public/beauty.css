@@ -74,6 +74,7 @@ input {
 /* table.grid */
 
 #grid {
+  border-collapse: collapse;
   border-spacing:0px;
   font-family:monospace;
   font-size:9pt;
@@ -82,12 +83,23 @@ input {
 }
 #grid tr {
   background-color:#333333;
+  border: 1px solid #3B3F41;
+}
+#grid tr:first-child {
+  border-top: none;
+}
+#grid tr:last-child {
+  border-bottom: none;
 }
 #grid td,
 #grid th {
   padding: 5px;
   vertical-align:top;
   text-align:left;
+}
+#thead {
+  background-color:#999 !important;
+  color:black;
 }
 
 tr.editing td {
