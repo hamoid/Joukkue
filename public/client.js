@@ -3,6 +3,8 @@ var Joukkue = function() {
   this.layers = {};
   this.layersSorted = [];
   this.currentLayer = undefined;
+  this.lastEditAreaId = undefined;
+  this.lastEditSelection = { start:0, end:0 };
   this.animPlaying = true;
   this.reservedVSpace = 0;
 
@@ -193,7 +195,9 @@ Joukkue.prototype.onFocusEditable = function(e) {
   var t = $(e.currentTarget);
   t.parent('tr').addClass('editing');
 
+  // if focused in a #grid cell
   if(t.closest($('#grid')).length > 0) {
+    cc.lastEditAreaId = t;
     t.parent('tr').before('<tr id="thead"><th>vars</th><th>draw</th><th>order</th></tr>');
   }
 };
@@ -305,10 +309,11 @@ $(function() {
     , layerName
     , varType
     , contentHTML
-    , k;
+    , k = e.keyCode || e.charCode;
 
-    if(e.ctrlKey) {
-      k = e.keyCode || e.charCode;
+    if(k == 27) {
+        $('#row_chatBox').focus();
+    } else if(e.ctrlKey) {
       if(k == 10 || k == 13) {
         // CTRL + ENTER
         idParts = e.target.id.split('_');
@@ -332,17 +337,12 @@ $(function() {
       cc.onPressEnter();
       $('#row_chatBox').text('');
       e.preventDefault();
+    } else if(k == 27) {
+      cc.lastEditAreaId.focus();
     }
   });
 
   $('#row_chatBox').focus(cc.onFocusEditable).blur(cc.onBlurEditable);
-
-  $('body').keydown(function(e) {
-    var k = e.keyCode || e.charCode;
-    if(k == 27) {
-      $('#cmd_help').focus();
-    }
-  });
 
   cc.reservedVSpace = $('#row_menu').outerHeight(true) +
     $('#row_chatView').outerHeight(true) +

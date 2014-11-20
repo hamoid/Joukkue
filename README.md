@@ -4,9 +4,11 @@ Work in progress.
 
 ## To do
 
-* ESC toggle between edit/chat
-* Remember which field I was editing, and the selection, so I can restore it after coming back from chat box. Show selection while on chat.
+* on cell blur, store selection
+* on cell blur, highlight cell border
+* on cell focus, restore selection
 * Scroll to bottom when editing last field
+
 * If someone edits same cell as you, indicate changed (but don't rewrite your work without notice)
   * ESC cancels your edit (jumps between grid and chat)
   * CTRL+ENTER sends your edit
@@ -34,3 +36,4 @@ Work in progress.
 * Show layer crashes in chat.
 * Chat, highlight on focus.
 * implement: .who .where .help .room
+* ESC toggle between edit/chat
