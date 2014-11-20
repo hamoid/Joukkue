@@ -5,6 +5,19 @@ var Datastore = require('nedb')
 
 dbLayers.persistence.setAutocompactionInterval(300 * 1000);
 
+var Joukkue = {
+  msg: {
+    serverName:    'cpu',
+    someoneIsHere: '%s is here',
+    roomInfo:      'Hi %s!\nYou are in the %s room %s'
+  },
+  fmt: function(msg, etc) {
+    var i = 1;
+    var args = arguments;
+    return msg.replace(/%((%)|s)/g, function (m) { return m[2] || args[i++] })
+  }
+};
+
 // web server
 
 var app = require('express')();
@@ -67,6 +80,18 @@ io.on('connection', function(socket) {
       socket.emit('allLayers', layers);
     });
   }
+  function sendRoomInfo() {
+    socket.emit('say', Joukkue.msg.serverName, Joukkue.fmt(
+      Joukkue.msg.roomInfo,
+      socket.username,
+      socket.room,
+      getUsersInRoom(socket.username, socket.room)
+    ));
+  }
+
+  socket.on('requestRoomInfo', function() {
+    sendRoomInfo();
+  });
 
   socket.on('addUser', function(username) {
     socket.username = username;
@@ -74,27 +99,23 @@ io.on('connection', function(socket) {
     socket.join(socket.room);
     sendLayersToUser();
     // to you
-    socket.emit('say', 'SERVER', 'Hi ' + socket.username + '!\n'
-                + 'You are in the ' + socket.room + ' room '
-                + getUsersInRoom(socket.username, socket.room));
+    sendRoomInfo();
     // to room
-    socket.to(socket.room).emit('say', 'SERVER', socket.username + ' is here');
-
-    console.log('user identifies as ' + socket.username);
+    socket.to(socket.room).emit('say', Joukkue.msg.serverName, Joukkue.fmt(Joukkue.msg.someoneIsHere, socket.username));
   });
 
 
 	socket.on('joinRoom', function(newroom){
     // to you
-		socket.emit('say', 'SERVER',
+		socket.emit('say', Joukkue.msg.serverName,
                 'You are now in the ' + newroom + ' room '
                 + getUsersInRoom(socket.username, newroom) + '.\n');
 
     // to old room
-		socket.broadcast.to(socket.room).emit('say', 'SERVER', socket.username + ' went to room ' + newroom);
+		socket.broadcast.to(socket.room).emit('say', Joukkue.msg.serverName, socket.username + ' went to room ' + newroom);
 
     // to new room
-		socket.broadcast.to(newroom).emit('say', 'SERVER', socket.username + ' is here');
+		socket.broadcast.to(newroom).emit('say', Joukkue.msg.serverName, socket.username + ' is here');
 
 		socket.leave(socket.room);
 		socket.join(newroom);
@@ -112,7 +133,6 @@ io.on('connection', function(socket) {
       { $set: { room: socket.room, name: name, vars: vars } },
       { upsert: true },
       function(err, numReplaced, newDoc) {
-        console.log('vars', name, err, numReplaced, newDoc);
         io.to(socket.room).emit('vars', name, vars);
       }
     );
@@ -124,7 +144,6 @@ io.on('connection', function(socket) {
       { $set: { room: socket.room, name: name, draw: func } },
       { upsert: true },
       function(err, numReplaced, newDoc) {
-        console.log('update dbLayers', name, err, numReplaced, newDoc);
         io.to(socket.room).emit('draw', name, func);
       }
     );
@@ -135,7 +154,6 @@ io.on('connection', function(socket) {
       { room:socket.room, name: name },
       { },
       function(err, numRemoved) {
-        console.log("remove dbLayers", err, numRemoved);
         io.to(socket.room).emit('remove', name);
       }
     );
@@ -147,7 +165,6 @@ io.on('connection', function(socket) {
       { $set: { room: socket.room, name: name, depth: dep  } },
       { upsert: true },
       function(err, numReplaced, newDoc) {
-        console.log('update dbLayers', name, err, numReplaced, newDoc);
         io.to(socket.room).emit('depth', name, dep);
       }
     );
@@ -155,7 +172,6 @@ io.on('connection', function(socket) {
 
   socket.on('disconnect', function() {
     socket.to(socket.room).emit('say', 'SERVER', socket.username + ' is gone');
-    console.log('user disconnect ' + socket.username);
   });
 
 });

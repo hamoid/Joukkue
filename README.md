@@ -4,21 +4,25 @@ Work in progress.
 
 ## To do
 
-* Show room name, your name, participants
-* Allow changing rooms (show max 10 random rooms?)
-
-* Remember which field I was editing, and the selection, so I can restore it after coming back from chat box.
-* Add cursors to move around grid
-  * Use ENTER to edit
-  * M to move
-  * SPACE to toggle layer on/off
-* Hide depth fields. Use GUI.
+* ESC toggle between edit/chat
+* Remember which field I was editing, and the selection, so I can restore it after coming back from chat box. Show selection while on chat.
+* Scroll to bottom when editing last field
 * If someone edits same cell as you, indicate changed (but don't rewrite your work without notice)
   * ESC cancels your edit (jumps between grid and chat)
   * CTRL+ENTER sends your edit
 * Show where people are editing
-* Allow tempo tapping to set var for loops. also offset.
-* Indicate crashed layer in grid
+* Indicate crashed layer
+* Indicate disabled layer
+* When I start typing in a layer, add myself as editor to server. When I save or loose focus, remove myself as editor. Server sends editor list for each field. Clients should visualize editors.
+
+* Send noiseSeed, randomSeed
+* Meta: code can listen to coders coding :)
+
+* implement
+  * .on .off .name .new .delete
+  * .up .down .top .bottom
+  * .rooms
+  * .save - http://www.websector.de/blog/2011/12/22/pushing-binary-image-data-using-node-js-and-socket-io/
 
 ## Done
 
@@ -29,3 +33,4 @@ Work in progress.
 * Show chat in GUI
 * Show layer crashes in chat.
 * Chat, highlight on focus.
+* implement: .who .where .help .room

@@ -9,7 +9,18 @@ var Joukkue = function() {
   this.msg = {
     layerCrashed:   'Layer %s crashed with %s',
     play:           'play animation',
-    pause:          'pause animation'
+    pause:          'pause animation',
+    roomHowto:      'use: .room roomName',
+    help:           'Available commands:<br/>'
+    + '_.rooms _ _ _ _ List available rooms<br/>'
+    + '_.room roomName Go to new room<br/>'
+    + '_.name newName_ Change nickname<br/>'
+    + '_.who / where _ Show room name and participants<br/>'
+    + '_.new / .delete Create / delete layer<br/>'
+    + '_.on  / .off _ _Enable / disable layer<br/>'
+    + '_.up  / .down _ Increase / decrease layer z-depth<br/>'
+    + '_.top / .bottom Put layer on top / bottom<br/>'
+    + '_.help _ _ _ _ _Show this help<br/>'
   };
 
   var _this = this;
@@ -50,6 +61,7 @@ var Joukkue = function() {
   });
 
   this.socket.on('remove', function(name) {
+    $('#cmd_help').focus();
     delete _this.layers[name];
     _this.buildLayersSorted();
     $('#' + name + '_draw').unbind();
@@ -135,6 +147,13 @@ Joukkue.prototype.addToChat = function(msg) {
 };
 
 Joukkue.prototype.createNewLayer = function(name, varsHTML, drawHTML, depth) {
+  if(depth < 0) {
+    for(var l in cc.layers) {
+      if(cc.layers[l].depth >= depth) {
+        depth = Math.floor(cc.layers[l].depth) + 2;
+      }
+    };
+  }
   var html = '<tr class="editable">'
   + this.fmt('<td id="%s_vars" class="c2" contentEditable="true">%s</td>', name, varsHTML || '')
   + this.fmt('<td id="%s_draw" class="c3" contentEditable="true">%s</td>', name, drawHTML || '')
@@ -179,19 +198,58 @@ Joukkue.prototype.onFocusEditable = function(e) {
   }
 };
 
-
 Joukkue.prototype.onWindowResize = function() {
   $('#row_grid').height($(window).height() - this.reservedVSpace);
 }
 
+Joukkue.prototype.onPressEnter = function() {
+  var txt = $('#row_chatBox').text();
+  var part;
+  console.log(txt.charAt(0), txt.length);
+  if(txt.charAt(0) == '.' && txt.length > 1) {
+    part = txt.split(' ');
+    switch(part[0].substr(1)) {
+      case 'bottom':
+        break;
+      case 'delete':
+        break;
+      case 'down':
+        break;
+      case 'help':
+        this.addToChat(this.msg.help.replace(/_/g, '&nbsp;'));
+        break;
+      case 'name':
+        break;
+      case 'new':
+        this.createNewLayer(cc.genID(), "", "", -1);
+        break;
+      case 'off':
+        break;
+      case 'on':
+        break;
+      case 'room':
+        if(part[1].match(/\w+/)) {
+          this.socket.emit('joinRoom', part[1]);
+        } else {
+          this.addToChat(this.msg.roomHowto);
+        }
+        break;
+      case 'rooms':
+        break;
+      case 'top':
+        break;
+      case 'up':
+        break;
+      case 'where':
+      case 'who':
+        this.socket.emit('requestRoomInfo');
+        break;
+    }
+  } else {
+    cc.socket.emit('say', txt);
+  }
+}
 
-// Commands (DEPRECATED)
-
-// add editable room: text + enter
-Joukkue.prototype.joinRoom = function(roomName) {
-  this.socket.emit('joinRoom', roomName);
-  return " . ";
-};
 
 var cc = new Joukkue();
 
@@ -239,37 +297,39 @@ $(function() {
   });
 
   $('#cmd_new_layer').click(function() {
-    var nextDepth = 0;
-    for(var l in cc.layers) {
-      if(cc.layers[l].depth > nextDepth) {
-        nextDepth = Math.floor(cc.layers[l].depth);
-      }
-    };
-    nextDepth += 2;
-    cc.createNewLayer(cc.genID(), "", "", nextDepth);
+    cc.createNewLayer(cc.genID(), "", "", -1);
   });
 
   $('#grid').keydown(function(e) {
-    var idParts = e.target.id.split('_');
-    var layerName = idParts[0];
-    var varType = idParts[1];
-    var contentHTML = $(e.target).html();
-    var k = e.keyCode || e.charCode;
+    var idParts
+    , layerName
+    , varType
+    , contentHTML
+    , k;
 
-    if(e.ctrlKey && (k == 10 || k == 13)) {
-      // CTRL + ENTER
-      cc.socket.emit(varType, layerName, contentHTML);
-    } else if( e.ctrlKey && (k == 8 || k == 46 )) {
-      // CTRL + DEL
-      cc.socket.emit('remove', layerName);
-      return false;
+    if(e.ctrlKey) {
+      k = e.keyCode || e.charCode;
+      if(k == 10 || k == 13) {
+        // CTRL + ENTER
+        idParts = e.target.id.split('_');
+        layerName = idParts[0];
+        varType = idParts[1];
+        contentHTML = $(e.target).html();
+        cc.socket.emit(varType, layerName, contentHTML);
+      } else if(k == 8 || k == 46 ) {
+        // CTRL + DEL
+        idParts = e.target.id.split('_');
+        layerName = idParts[0];
+        cc.socket.emit('remove', layerName);
+        return false;
+      }
     }
   });
 
   $('#row_chatBox').keydown(function(e) {
     var k = e.keyCode || e.charCode;
     if(k == 10 || k == 13) {
-      cc.socket.emit('say', $('#row_chatBox').text());
+      cc.onPressEnter();
       $('#row_chatBox').text('');
       e.preventDefault();
     }
@@ -280,7 +340,7 @@ $(function() {
   $('body').keydown(function(e) {
     var k = e.keyCode || e.charCode;
     if(k == 27) {
-      cc.onBlurEditable();
+      $('#cmd_help').focus();
     }
   });
 
