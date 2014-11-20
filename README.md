@@ -4,9 +4,6 @@ Work in progress.
 
 ## To do
 
-* on cell blur, highlight cell border
-* Scroll to bottom when editing last field
-
 * If someone edits same cell as you, indicate changed (but don't rewrite your work without notice)
   * ESC cancels your edit (jumps between grid and chat)
   * CTRL+ENTER sends your edit
@@ -14,15 +11,14 @@ Work in progress.
 * Indicate crashed layer
 * Indicate disabled layer
 * When I start typing in a layer, add myself as editor to server. When I save or loose focus, remove myself as editor. Server sends editor list for each field. Clients should visualize editors.
+* implement
+  * .on .off .name .delete
+  * .up .down .top .bottom
+  * .rooms
 
 * Send noiseSeed, randomSeed
 * Meta: code can listen to coders coding :)
-
-* implement
-  * .on .off .name .new .delete
-  * .up .down .top .bottom
-  * .rooms
-  * .save - http://www.websector.de/blog/2011/12/22/pushing-binary-image-data-using-node-js-and-socket-io/
+* .save - http://www.websector.de/blog/2011/12/22/pushing-binary-image-data-using-node-js-and-socket-io/
 
 ## Done
 
@@ -33,7 +29,9 @@ Work in progress.
 * Show chat in GUI
 * Show layer crashes in chat.
 * Chat, highlight on focus.
-* implement: .who .where .help .room
+* implement: .who .where .help .room .new
 * ESC toggle between edit/chat
 * on cell focus, restore selection
 * on cell blur, store selection
+* Scroll to bottom when editing last field
+* on cell blur, highlight border (for .onn, .off, .delete ...)

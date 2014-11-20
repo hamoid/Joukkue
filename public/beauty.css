@@ -97,6 +97,9 @@ input {
   vertical-align:top;
   text-align:left;
 }
+#grid td.target {
+  border: 2px dotted #daca98;
+}
 #thead {
   background-color:#999 !important;
   color:black;

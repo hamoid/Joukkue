@@ -13,7 +13,7 @@ var Joukkue = function() {
     play:           'play animation',
     pause:          'pause animation',
     roomHowto:      'use: .room roomName',
-    help:           'Available commands:<br/>'
+    help:           '<br/>Available commands:<br/>'
     + '_.rooms _ _ _ _ List available rooms<br/>'
     + '_.room roomName Go to new room<br/>'
     + '_.name newName_ Change nickname<br/>'
@@ -188,10 +188,9 @@ Joukkue.prototype.createNewLayer = function(name, varsHTML, drawHTML, depth) {
 
   $('#grid').append(html);
 
-  $('#' + name + '_vars').focus(this.onFocusEditable).blur(this.onBlurEditable);
-  $('#' + name + '_draw').focus(this.onFocusEditable).blur(this.onBlurEditable);
-  $('#' + name + '_depth').focus(this.onFocusEditable).blur(this.onBlurEditable);
-  //this.makeLayersFocusable();
+  $('#' + name + '_vars').focus(this.onFocusEditable).blur(this.onBlurEditable).mouseup(this.onMouseUp);
+  $('#' + name + '_draw').focus(this.onFocusEditable).blur(this.onBlurEditable).mouseup(this.onMouseUp);
+  $('#' + name + '_depth').focus(this.onFocusEditable).blur(this.onBlurEditable).mouseup(this.onMouseUp);
   $('#' + name + '_draw').focus();
 };
 
@@ -212,19 +211,35 @@ Joukkue.prototype.buildLayersSorted = function() {
 };
 
 Joukkue.prototype.onBlurEditable = function(e) {
-  $('#thead').remove();
-  $(e.currentTarget).parent('tr').removeClass('editing');
+  var t = $(e.currentTarget);
+  var isGridElement = t.closest($('#grid')).length > 0;
+  t.parent('tr').removeClass('editing');
+  if(isGridElement) {
+    cc.lastEditAreaId.addClass('target');
+  }
 };
 Joukkue.prototype.onFocusEditable = function(e) {
   var t = $(e.currentTarget);
+  var isGridElement = t.closest($('#grid')).length > 0;
   t.parent('tr').addClass('editing');
 
-  // if focused in a #grid cell
-  if(t.closest($('#grid')).length > 0) {
+  if(isGridElement) {
     cc.lastEditAreaId = t;
-    t.parent('tr').before('<tr id="thead"><th>vars</th><th>draw</th><th>order</th></tr>');
+    $('#grid td.target').removeClass('target');
+
+    // auto scroll up when clicking on last entry (if out of view)
+    var offset = t.position().top + t.height() - $('#row_chatView').position().top + 12;
+    if(offset > 0) {
+      $('#row_grid').scrollTop(offset + $('#row_grid').scrollTop());
+    }
+  } else {
+    // here we can tell the server NOT EDITING
   }
 };
+Joukkue.prototype.onMouseUp = function() {
+  var r = window.getSelection().getRangeAt(0);
+  r.collapse();
+}
 
 Joukkue.prototype.onWindowResize = function() {
   $('#row_grid').height($(window).height() - this.reservedVSpace);
@@ -239,6 +254,7 @@ Joukkue.prototype.onPressEnter = function() {
       case 'bottom':
         break;
       case 'delete':
+        console.log('delete', cc.lastEditAreaId.attr('id'));
         break;
       case 'down':
         break;

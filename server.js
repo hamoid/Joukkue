@@ -45,8 +45,6 @@ var server = app.listen(3000, function () {
 var io = require('socket.io').listen(server);
 
 io.on('connection', function(socket) {
-  console.log('user connected');
-
   function getUsersInRoom(user, room) {
     var names = [];
     var clients = io.sockets.adapter.rooms[room];
