@@ -143,6 +143,30 @@ Joukkue.prototype.randomName = function() {
 
 // DOM
 
+Joukkue.prototype.saveSelection = function() {
+  if (window.getSelection) {
+    sel = window.getSelection();
+    if (sel.getRangeAt && sel.rangeCount) {
+      return sel.getRangeAt(0);
+    }
+  } else if (document.selection && document.selection.createRange) {
+    return document.selection.createRange();
+  }
+  return null;
+}
+
+Joukkue.prototype.restoreSelection = function(range) {
+  if (range) {
+    if (window.getSelection) {
+      sel = window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(range);
+    } else if (document.selection && range.select) {
+      range.select();
+    }
+  }
+}
+
 Joukkue.prototype.addToChat = function(msg) {
   $('#row_chatView').append(msg + '<br/>');
   $('#row_chatView').scrollTop($('#row_chatView')[0].scrollHeight);
@@ -209,7 +233,6 @@ Joukkue.prototype.onWindowResize = function() {
 Joukkue.prototype.onPressEnter = function() {
   var txt = $('#row_chatBox').text();
   var part;
-  console.log(txt.charAt(0), txt.length);
   if(txt.charAt(0) == '.' && txt.length > 1) {
     part = txt.split(' ');
     switch(part[0].substr(1)) {
@@ -312,6 +335,7 @@ $(function() {
     , k = e.keyCode || e.charCode;
 
     if(k == 27) {
+        cc.lastEditSelection = cc.saveSelection();
         $('#row_chatBox').focus();
     } else if(e.ctrlKey) {
       if(k == 10 || k == 13) {
@@ -339,6 +363,7 @@ $(function() {
       e.preventDefault();
     } else if(k == 27) {
       cc.lastEditAreaId.focus();
+      cc.restoreSelection(cc.lastEditSelection);
     }
   });
 
