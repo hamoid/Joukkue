@@ -8,36 +8,19 @@ var Joukkue = function() {
   this.animPlaying = true;
   this.reservedVSpace = 0;
 
-  this.msg = {
-    layerCrashed:   'Layer %s crashed with %s',
-    play:           'play animation',
-    pause:          'pause animation',
-    roomHowto:      'use: .room roomName',
-    help:           '<br/>Available commands:<br/>'
-    + '_.rooms _ _ _ _ List available rooms<br/>'
-    + '_.room roomName Go to new room<br/>'
-    + '_.name newName_ Change nickname<br/>'
-    + '_.who / where _ Show room name and participants<br/>'
-    + '_.new / .delete Create / delete layer<br/>'
-    + '_.on  / .off _ _Enable / disable layer<br/>'
-    + '_.up  / .down _ Increase / decrease layer z-depth<br/>'
-    + '_.top / .bottom Put layer on top / bottom<br/>'
-    + '_.help _ _ _ _ _Show this help<br/>'
-  };
-
   var _this = this;
 
   // Socket events
 
   this.socket.on('connect', function() {
-    _this.socket.emit('addUser', _this.randomName());
+    _this.socket.emit(constants.CMD_ADD_USER, string.genRandomName());
   });
 
-  this.socket.on('say', function(username, msg){
+  this.socket.on(constants.CMD_SAY, function(username, msg){
     _this.addToChat(username + ': ' + msg);
   });
 
-  this.socket.on('vars', function(name, html) {
+  this.socket.on(constants.CMD_SET_VARS, function(name, html) {
     var id = '#' + name + '_vars';
 
     $(id).html(html);
@@ -49,7 +32,7 @@ var Joukkue = function() {
     _this.layers[name].vars = obj;
   });
 
-  this.socket.on('draw', function(name, html) {
+  this.socket.on(constants.CMD_SET_DRAW, function(name, html) {
     var id = '#' + name + '_draw';
 
     $(id).html(html);
@@ -62,8 +45,9 @@ var Joukkue = function() {
     _this.buildLayersSorted();
   });
 
-  this.socket.on('remove', function(name) {
-    $('#cmd_help').focus();
+  this.socket.on(constants.CMD_REMOVE, function(name) {
+    // TODO: only if focused on disappearing tr
+    $('#but_help').focus();
     delete _this.layers[name];
     _this.buildLayersSorted();
     $('#' + name + '_draw').unbind();
@@ -80,7 +64,7 @@ var Joukkue = function() {
   });
 
 
-  this.socket.on('allLayers', function(lyr) {
+  this.socket.on(constants.CMD_SET_LAYERS, function(lyr) {
     $('#grid tr.editable').remove();
 
     for(var l in lyr) {
@@ -98,47 +82,6 @@ var Joukkue = function() {
     _this.buildLayersSorted();
   });
 };
-
-
-// String
-
-Joukkue.prototype.fmt = function(msg, etc) {
-  var i = 1;
-  var args = arguments;
-  return msg.replace(/%((%)|s)/g, function (m) { return m[2] || args[i++] })
-};
-
-Joukkue.prototype.genID = function() {
-  return 'Lxxxxxxxx'.replace(/[xy]/g, function(c) {
-    var r = Math.random()*16|0, v = c == 'x' ? r : (r&0x3|0x8);
-    return v.toString(16);
-  });
-};
-
-Joukkue.prototype.randomName = function() {
-  var g1 = ['a', 'e', 'i', 'o', 'u', 'y'];
-  var g2 = ['b', 'br', 'bl', 'c', 'cr', 'cl',
-            'd', 'dr', 'f', 'fr', 'g', 'gl',
-            'j', 'k', 'kr', 'l', 'm', 'n',
-            'p', 'pr', 'pl', 's', 't', 'tr', 'v'];
-  var g3 = ['s', 'l', 'n', 'm'];
-
-  var r = function(a) {
-    return a[Math.floor(Math.random() * a.length)];
-  }
-  var name;
-  var rnd = Math.random();
-  if(rnd < 0.25) {
-    name = r(g1) + r(g2) + r(g1) + r(g3);
-  } else if(rnd < 0.5) {
-    name = r(g1) + r(g2) + r(g1) + r(g2) + r(g1);
-  } else if(rnd < 0.5) {
-    name = r(g2) + r(g1) + r(g2) + r(g1);
-  } else {
-    name = r(g2) + r(g1) + r(g2) + r(g1) + r(g3);
-  }
-  return name;
-}
 
 
 // DOM
@@ -181,9 +124,9 @@ Joukkue.prototype.createNewLayer = function(name, varsHTML, drawHTML, depth) {
     };
   }
   var html = '<tr class="editable">'
-  + this.fmt('<td id="%s_vars" class="c2" contentEditable="true">%s</td>', name, varsHTML || '')
-  + this.fmt('<td id="%s_draw" class="c3" contentEditable="true">%s</td>', name, drawHTML || '')
-  + this.fmt('<td id="%s_depth" class="c4" contentEditable="true">%s</td>', name, depth || '')
+  + string.fmt('<td id="%s_vars" class="c2" contentEditable="true">%s</td>', name, varsHTML || '')
+  + string.fmt('<td id="%s_draw" class="c3" contentEditable="true">%s</td>', name, drawHTML || '')
+  + string.fmt('<td id="%s_depth" class="c4" contentEditable="true">%s</td>', name, depth || '')
   + '</tr>';
 
   $('#grid').append(html);
@@ -259,12 +202,12 @@ Joukkue.prototype.onPressEnter = function() {
       case 'down':
         break;
       case 'help':
-        this.addToChat(this.msg.help.replace(/_/g, '&nbsp;'));
+        this.addToChat(txt.help.replace(/_/g, '&nbsp;'));
         break;
       case 'name':
         break;
       case 'new':
-        this.createNewLayer(cc.genID(), "", "", -1);
+        this.createNewLayer(string.genID(), "", "", -1);
         break;
       case 'off':
         break;
@@ -272,9 +215,9 @@ Joukkue.prototype.onPressEnter = function() {
         break;
       case 'room':
         if(part[1].match(/\w+/)) {
-          this.socket.emit('joinRoom', part[1]);
+          this.socket.emit(constants.CMD_JOIN_ROOM, part[1]);
         } else {
-          this.addToChat(this.msg.roomHowto);
+          this.addToChat(txt.roomHowto);
         }
         break;
       case 'rooms':
@@ -285,11 +228,11 @@ Joukkue.prototype.onPressEnter = function() {
         break;
       case 'where':
       case 'who':
-        this.socket.emit('requestRoomInfo');
+        this.socket.emit(constants.CMD_REQ_ROOM_INFO);
         break;
     }
   } else {
-    cc.socket.emit('say', txt);
+    cc.socket.emit(constants.CMD_SAY, txt);
   }
 }
 
@@ -313,7 +256,7 @@ function draw() {
       cc.layers[n].draw(cc.layers[n].vars);
       pop();
     } catch(e) {
-      cc.addToChat(cc.fmt(cc.msg.layerCrashed, n, e));
+      cc.addToChat(string.fmt(txt.layerCrashed, n, e));
       // if crash, remove from layersSorted to avoid rendering
       cc.layersSorted.splice(cc.layersSorted.indexOf(n), 1);
     }
@@ -328,19 +271,19 @@ $(function() {
     cc.onWindowResize();
   });
 
-  $('#cmd_play_pause').click(function() {
+  $('#but_play_pause').click(function() {
     cc.animPlaying = !cc.animPlaying;
     if(cc.animPlaying) {
       loop();
-      $('#cmd_play_pause').val(cc.msg.pause);
+      $('#but_play_pause').val(txt.label_pause);
     } else {
       noLoop();
-      $('#cmd_play_pause').val(cc.msg.play);
+      $('#but_play_pause').val(txt.label_play);
     }
   });
 
-  $('#cmd_new_layer').click(function() {
-    cc.createNewLayer(cc.genID(), "", "", -1);
+  $('#but_new_layer').click(function() {
+    cc.createNewLayer(string.genID(), "", "", -1);
   });
 
   $('#grid').keydown(function(e) {
@@ -360,12 +303,13 @@ $(function() {
         layerName = idParts[0];
         varType = idParts[1];
         contentHTML = $(e.target).html();
-        cc.socket.emit(varType, layerName, contentHTML);
+        cc.socket.emit(constants.GET_LAYER_SET_CMD[varType],
+                       layerName, contentHTML);
       } else if(k == 8 || k == 46 ) {
         // CTRL + DEL
         idParts = e.target.id.split('_');
         layerName = idParts[0];
-        cc.socket.emit('remove', layerName);
+        cc.socket.emit(constants.CMD_REMOVE, layerName);
         return false;
       }
     }
@@ -390,4 +334,8 @@ $(function() {
     $('#row_chatBox').outerHeight(true) + 8;
 
   cc.onWindowResize();
+  cc.addToChat(txt.welcome);
+  $('#but_new_layer').val(txt.label_new_layer);
+  $('#but_help').val(txt.label_help);
+  $('#but_play_pause').val(txt.label_pause);
 });

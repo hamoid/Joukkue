@@ -10,9 +10,9 @@
         <table id="right_column">
             <tr>
                 <td id="row_menu">
-                    <input type="button" id="cmd_new_layer" value="new layer" />
-                    <input type="button" id="cmd_help" value="help" />
-                    <input type="button" id="cmd_play_pause" value="pause animation" />
+                    <input type="button" id="but_new_layer" value="" />
+                    <input type="button" id="but_help" value="" />
+                    <input type="button" id="but_play_pause" value="" />
                 </td>
             </tr>
             <tr>
@@ -21,9 +21,7 @@
                 </td>
             </tr>
             <tr>
-                <td id="row_chatView">
-                    Welcome to <a target="joukkue" href="https://github.com/hamoid/joukkue">joukkue</a> v0.1!<br/>
-                </td>
+                <td id="row_chatView"></td>
             </tr>
             <tr>
                 <td id="row_chatBox" contentEditable="true"></td>
@@ -32,8 +30,13 @@
 
         <script src="/p5.min.js"></script>
         <script src="/p5.sound.min.js"></script>
+
         <script src="/jquery-2.1.1.min.js"></script>
         <script src="/socket.io-1.2.0.js"></script>
+
+        <script src="/constants.js"></script>
+        <script src="/string.js"></script>
+        <script src="/txt.js"></script>
         <script src="/client.js"></script>
     </body>
 </html>
