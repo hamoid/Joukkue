@@ -1,5 +1,3 @@
-// database - https://github.com/louischatriot/nedb
-
 var Datastore = require('nedb')
 , constants = require('./public/constants')
 , string = require('./public/string')
@@ -8,7 +6,10 @@ var Datastore = require('nedb')
 
 dbLayers.persistence.setAutocompactionInterval(300 * 1000);
 
-// web server
+
+//  ┬ ┬┌─┐┌┐   ┌─┐┌─┐┬─┐┬  ┬┌─┐┬─┐
+//  │││├┤ ├┴┐  └─┐├┤ ├┬┘└┐┌┘├┤ ├┬┘
+//  └┴┘└─┘└─┘  └─┘└─┘┴└─ └┘ └─┘┴└─
 
 var app = require('express')();
 
@@ -26,7 +27,10 @@ var server = app.listen(3000, function () {
   console.log(txt.listeningAt, host, port)
 });
 
-// socket.io
+
+//  ┌─┐┌─┐┌─┐┬┌─┌─┐┌┬┐ ┬┌─┐
+//  └─┐│ ││  ├┴┐├┤  │  ││ │
+//  └─┘└─┘└─┘┴ ┴└─┘ ┴ o┴└─┘
 
 var io = require('socket.io').listen(server);
 
@@ -53,13 +57,7 @@ io.on('connection', function(socket) {
     dbLayers.find({ room: socket.room }, function(err, layerData) {
       if (layerData.length > 0) {
         for(var i in layerData) {
-          var n = layerData[i].name;
-          layers[n] = {
-            name: n,
-            vars: layerData[i].vars,
-            draw: layerData[i].draw,
-            depth: layerData[i].depth
-          };
+          layers[layerData[i].name] = layerData[i];
         }
       }
       socket.emit(constants.CMD_SET_LAYERS, layers);
@@ -166,7 +164,7 @@ io.on('connection', function(socket) {
 
   socket.on(constants.CMD_SET_DEPTH, function(name, dep) {
     dbLayers.update(
-      { room:socket.room },
+      { room:socket.room, name: name },
       { $set: { room: socket.room, name: name, depth: dep  } },
       { upsert: true },
       function(err, numReplaced, newDoc) {
@@ -178,6 +176,20 @@ io.on('connection', function(socket) {
       }
     );
   });
+
+  socket.on(constants.CMD_SET_ENABLED, function(name, enabled) {
+    dbLayers.update(
+      { room:socket.room, name: name },
+      { $set: { room: socket.room, name: name, enabled: enabled  } },
+      { upsert: true },
+      function(err, numReplaced, newDoc) {
+        io.to(socket.room).emit(
+          constants.CMD_SET_ENABLED,
+          name,
+          enabled
+        );
+      }
+    );  });
 
   socket.on('disconnect', function() {
     socket.to(socket.room).emit(

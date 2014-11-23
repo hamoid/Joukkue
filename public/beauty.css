@@ -91,6 +91,9 @@ input {
 #grid tr:last-child {
   border-bottom: none;
 }
+#grid tr.disabled td {
+  opacity:0.3;
+}
 #grid td,
 #grid th {
   padding: 5px;
@@ -107,5 +110,6 @@ input {
 
 tr.editing td {
   background-color:#AAA !important;
+  opacity:1.0 !important;
   color:black;
 }

@@ -1,18 +1,33 @@
-// LayerModel
+//  ╦  ┌─┐┬ ┬┌─┐┬─┐╔╦╗┌─┐┌┬┐┌─┐┬
+//  ║  ├─┤└┬┘├┤ ├┬┘║║║│ │ ││├┤ │
+//  ╩═╝┴ ┴ ┴ └─┘┴└─╩ ╩└─┘─┴┘└─┘┴─┘
 
 var LayerModel = function() {
   this.layers = {};
   this.layersSorted = [];
+  this.Layer = function(name) {
+    this.name = name;
+    this.enabled = true;
+    this.crashed = false;
+    this.depth = this.getNextDepth();
+  }
+}
+LayerModel.prototype.createLayer = function() {
+  var name = string.genID();
+  var l = new Layer(name);
+  this.layers[name] = l;
+  return l;
 }
 LayerModel.prototype.setVars = function(name, txt) {
-  this.layers[name] = this.layers[name] || { name: name };
+  this.layers[name] = this.layers[name] || new Layer(name);
   eval("var obj = " + (txt || "{}"));
   this.layers[name].vars = obj;
 }
 LayerModel.prototype.setDraw = function(name, txt) {
-  this.layers[name] = this.layers[name] || { name: name };
+  this.layers[name] = this.layers[name] || new Layer(name);
   eval("var f = function(d) { " + txt + " }");
   this.layers[name].draw = f;
+  this.layers[name].crashed = false;
   this.sortLayers();
 }
 LayerModel.prototype.draw = function(err_cb) {
@@ -36,39 +51,43 @@ LayerModel.prototype.setDepth = function(name, dep) {
   this.layers[name].depth = dep;
   this.sortLayers();
 }
+LayerModel.prototype.setEnabled = function(name, enabled) {
+  this.layers[name].enabled = enabled;
+  this.sortLayers();
+}
 LayerModel.prototype.setLayers = function(lyr) {
   this.layers = lyr;
   this.sortLayers();
 }
 LayerModel.prototype.getNextDepth = function() {
-  var depth = 0;
-  for(var l in this.layers) {
-    if(this.layers[l].depth >= depth) {
-      depth = Math.floor(this.layers[l].depth) + 2;
-    }
-  };
-  return depth;
+  var layers = this.layers;
+  var depths = Object.keys(layers).map(function(name) {
+    return layers[name].depth;
+  });
+  return Math.max.apply(Math, depths) + 2;
 }
 LayerModel.prototype.setCrashed = function(name) {
-  this.layersSorted.splice(this.layersSorted.indexOf(name), 1);
+  this.layers[name].crashed = true;
+  this.sortLayers();
 }
 LayerModel.prototype.sortLayers = function() {
-  var tmp = [];
-  for(var l in this.layers) {
-    tmp.push({
-      name: this.layers[l].name,
-      depth: this.layers[l].depth
-    });
-  };
-  tmp.sort(function(a,b) { return a.depth - b.depth});
-
-  this.layersSorted = [];
-  for (var i=0; i<tmp.length; i++) {
-    this.layersSorted.push(tmp[i].name);
-  }
+  var layers = this.layers;
+  console.log(layers);
+  var activeLayerNames = Object.keys(layers).filter(function(name) {
+    return layers[name].enabled && !layers[name].crashed;
+  });
+  console.log(activeLayerNames);
+  var sortedDepths = activeLayerNames.map(function(name) {
+    return { name: name, depth: layers[name].depth }
+  });
+  console.log(sortedDepths);
+  sortedDepths.sort(function(a, b) { return a.depth - b.depth});
+  this.layersSorted = sortedDepths.map(function(o) { return o.name; })
 };
 
-// Joukkue - main
+//   ╦┌─┐┬ ┬┬┌─┬┌─┬ ┬┌─┐
+//   ║│ ││ │├┴┐├┴┐│ │├┤
+//  ╚╝└─┘└─┘┴ ┴┴ ┴└─┘└─┘
 
 var Joukkue = function() {
   this.socket = io();
@@ -87,7 +106,7 @@ var Joukkue = function() {
   });
 
   this.socket.on(constants.CMD_SAY, function(username, msg){
-    _this.addToChat(username + ': ' + msg);
+    _this.addTextToChat(username + ': ' + msg);
   });
 
   this.socket.on(constants.CMD_SET_VARS, function(name, html) {
@@ -115,10 +134,20 @@ var Joukkue = function() {
     $('#' + name + '_draw').parent().remove();
   });
 
-  this.socket.on('depth', function(name, dep) {
+  this.socket.on(constants.CMD_SET_DEPTH, function(name, dep) {
     dep = parseFloat(dep) || 666;
     _this.layerModel.setDepth(name, dep);
     $('#' + name + '_depth').text(dep);
+  });
+
+  this.socket.on(constants.CMD_SET_ENABLED, function(name, enabled) {
+    _this.layerModel.setEnabled(name, enabled);
+    var tr = $('#' + name + '_draw').parent();
+    if(enabled) {
+      tr.removeClass('disabled');
+    } else {
+      tr.addClass('disabled');
+    }
   });
 
 
@@ -126,7 +155,7 @@ var Joukkue = function() {
     $('#grid tr.editable').remove();
 
     for(var l in lyr) {
-      _this.createNewLayer(lyr[l].name, lyr[l].vars, lyr[l].draw, lyr[l].depth);
+      _this.addLayerToDOM(lyr[l]);
 
       var drawTxt = $('#' + lyr[l].name + '_draw').text();
       var varsTxt = $('#' + lyr[l].name + '_vars').text();
@@ -140,7 +169,10 @@ var Joukkue = function() {
   });
 };
 
-// DOM
+
+//  ╔╦╗╔═╗╔╦╗   ┬┬ ┬┌─┐┌─┐┬  ┬┌┐┌┌─┐
+//   ║║║ ║║║║   ││ ││ ┬│ ┬│  │││││ ┬
+//  ═╩╝╚═╝╩ ╩  └┘└─┘└─┘└─┘┴─┘┴┘└┘└─┘
 
 Joukkue.prototype.saveSelection = function() {
   if (window.getSelection) {
@@ -166,31 +198,28 @@ Joukkue.prototype.restoreSelection = function(range) {
   }
 }
 
-Joukkue.prototype.addToChat = function(msg) {
+Joukkue.prototype.addTextToChat = function(msg) {
   $('#row_chatView').append(msg + '<br/>');
   $('#row_chatView').scrollTop($('#row_chatView')[0].scrollHeight);
 };
 
 Joukkue.prototype.addCrashToChat = function(name, err) {
-  this.addToChat(string.fmt(txt.layerCrashed, name, err));
+  this.addTextToChat(string.fmt(txt.layerCrashed, name, err));
 };
 
-Joukkue.prototype.createNewLayer = function(name, varsHTML, drawHTML, depth) {
-  if(depth < 0) {
-    depth = this.layerModel.getNextDepth();
-  }
-  var html = '<tr class="editable">'
-  + string.fmt('<td id="%s_vars" class="c2" contentEditable="true">%s</td>', name, varsHTML || '')
-  + string.fmt('<td id="%s_draw" class="c3" contentEditable="true">%s</td>', name, drawHTML || '')
-  + string.fmt('<td id="%s_depth" class="c4" contentEditable="true">%s</td>', name, depth || '')
-  + '</tr>';
+Joukkue.prototype.addLayerToDOM = function(l) {
+  $('#grid').append(
+    string.fmt('<tr class="editable %s">', l.enabled ? '' : 'disabled')
+    + string.fmt('<td id="%s_vars" class="c2" contentEditable="true">%s</td>', l.name, l.vars || '')
+    + string.fmt('<td id="%s_draw" class="c3" contentEditable="true">%s</td>', l.name, l.draw || '')
+    + string.fmt('<td id="%s_depth" class="c4" contentEditable="true">%s</td>', l.name, l.depth || '')
+    + '</tr>'
+  );
 
-  $('#grid').append(html);
-
-  $('#' + name + '_vars').focus(this.onFocusEditable).blur(this.onBlurEditable).mouseup(this.onMouseUpEditable);
-  $('#' + name + '_draw').focus(this.onFocusEditable).blur(this.onBlurEditable).mouseup(this.onMouseUpEditable);
-  $('#' + name + '_depth').focus(this.onFocusEditable).blur(this.onBlurEditable).mouseup(this.onMouseUpEditable);
-  $('#' + name + '_draw').focus();
+  $('#' + l.name + '_vars').focus(this.onFocusEditable).blur(this.onBlurEditable).mouseup(this.onMouseUpEditable);
+  $('#' + l.name + '_draw').focus(this.onFocusEditable).blur(this.onBlurEditable).mouseup(this.onMouseUpEditable);
+  $('#' + l.name + '_depth').focus(this.onFocusEditable).blur(this.onBlurEditable).mouseup(this.onMouseUpEditable);
+  $('#' + l.name + '_draw').focus();
 };
 
 Joukkue.prototype.onBlurEditable = function(e) {
@@ -233,42 +262,50 @@ Joukkue.prototype.onWindowResize = function() {
 }
 
 Joukkue.prototype.onPressEnter = function() {
-  var txt = $('#row_chatBox').text();
-  var part;
+  var txt = $('#row_chatBox').text(),
+      idParts,
+      cmdParts;
   if(txt.charAt(0) == '.' && txt.length > 1) {
-    part = txt.split(' ');
-    switch(part[0].substr(1)) {
+    cmdParts = txt.split(' ');
+    idParts = cc.lastEditAreaId.attr('id').split('_');
+    switch(cmdParts[0].substr(1)) {
       case 'bottom':
+        console.log('bottom', idParts[0]);
         break;
       case 'delete':
-        console.log('delete', cc.lastEditAreaId.attr('id'));
+        console.log('delete', idParts[0]);
         break;
       case 'down':
+        console.log('down', idParts[0]);
         break;
       case 'help':
-        this.addToChat(txt.help.replace(/_/g, '&nbsp;'));
+        this.addTextToChat(txt.help.replace(/_/g, '&nbsp;'));
         break;
       case 'name':
         break;
       case 'new':
-        this.createNewLayer(string.genID(), "", "", -1);
+        this.addLayerToDOM(this.layerModel.createLayer());
         break;
       case 'off':
+        this.socket.emit(constants.CMD_SET_ENABLED, idParts[0], false);
         break;
       case 'on':
+        this.socket.emit(constants.CMD_SET_ENABLED, idParts[0], true);
         break;
       case 'room':
-        if(part[1].match(/\w+/)) {
-          this.socket.emit(constants.CMD_JOIN_ROOM, part[1]);
+        if(cmdParts[1].match(/\w+/)) {
+          this.socket.emit(constants.CMD_JOIN_ROOM, cmdParts[1]);
         } else {
-          this.addToChat(txt.roomHowto);
+          this.addTextToChat(txt.roomHowto);
         }
         break;
       case 'rooms':
         break;
       case 'top':
+        console.log('top', idParts[0]);
         break;
       case 'up':
+        console.log('up', idParts[0]);
         break;
       case 'where':
       case 'who':
@@ -281,9 +318,9 @@ Joukkue.prototype.onPressEnter = function() {
 }
 
 
-var cc = new Joukkue();
-
-// p5.js
+//  ╔═╗╔═╕  ┬┌─┐
+//  ╠═╝╚═╗  │└─┐
+//  ╩  ╘═╝o└┘└─┘
 
 function setup() {
   createCanvas(540, 540);
@@ -297,7 +334,10 @@ function draw() {
   cc.layerModel.draw(cc.addCrashToChat);
 }
 
-// listen to DOM events & initial set up
+
+//  ╔╦╗╔═╗╔╦╗  ┌─┐┬  ┬┌─┐┌┐┌┬┐┌─┐   ┬   ┌┐ ┌─┐┌─┐┌┬┐
+//   ║║║ ║║║║  ├┤ └┐┌┘├┤ ││││ └─┐  ┌┼─  ├┴┐│ ││ │ │
+//  ═╩╝╚═╝╩ ╩  └─┘ └┘ └─┘┘└┘┴ └─┘  └┘   └─┘└─┘└─┘ ┴
 
 $(function() {
 
@@ -317,7 +357,7 @@ $(function() {
 
   $('#but_new_layer').val(txt.label_new_layer);
   $('#but_new_layer').click(function() {
-    cc.createNewLayer(string.genID(), "", "", -1);
+    cc.addLayerToDOM(cc.layerModel.createLayer());
   });
 
   $('#grid').keydown(function(e) {
@@ -377,5 +417,8 @@ $(function() {
   });
 
   // show welcome
-  cc.addToChat(txt.welcome);
+  cc.addTextToChat(txt.welcome);
 });
+
+
+var cc = new Joukkue();

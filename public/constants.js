@@ -7,6 +7,7 @@
   c.CMD_SET_DRAW =      'setLayerDraw';
   c.CMD_SET_VARS =      'setLayerVars';
   c.CMD_SET_DEPTH =     'setLayerDepth';
+  c.CMD_SET_ENABLED =   'setLayerEnabled';
   c.CMD_ADD_USER =      'addUser';
   c.CMD_REMOVE =        'removeLayer';
   c.CMD_REQ_ROOM_INFO = 'requestRoomInfo';

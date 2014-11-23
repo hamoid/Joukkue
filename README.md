@@ -4,17 +4,28 @@ Work in progress.
 
 ## To do
 
+* BUG: layer renamed itself as another layer. check.
+* layers contain more data:
+  * isCrashed (local)
+  * changedBy (server) = {name1:23}
+  * // boolean or int? int implies more
+  * // connections to the server
+* commands to server
+  * addEditor(layer)
+  * removeEditor(layer)
+* commands from server
+  * setEditors(layer, { people })
+
+* .shiftKey + ESC to .revert changes to layer
 * If someone edits same cell as you, indicate changed (but don't rewrite your work without notice)
-  * ESC cancels your edit (jumps between grid and chat)
   * CTRL+ENTER sends your edit
 * Show where people are editing
 * Indicate crashed layer
-* Indicate disabled layer
-* When I start typing in a layer, add myself as editor to server. When I save or loose focus, remove myself as editor. Server sends editor list for each field. Clients should visualize editors.
+* cell.onKeyPress, compare .length || content is diff, cell.editors.push(myself). Server sends editor list for each cell. Clients visualize editors.
 * implement
-  * .on .off .name .delete
+  * .name .delete
   * .up .down .top .bottom
-  * .rooms
+  * .rooms .revert
 
 * Send noiseSeed, randomSeed
 * Meta: code can listen to coders coding :)
@@ -34,4 +45,13 @@ Work in progress.
 * on cell focus, restore selection
 * on cell blur, store selection
 * Scroll to bottom when editing last field
-* on cell blur, highlight border (for .onn, .off, .delete ...)
+* on cell blur, highlight border (used by .on, .off, .delete ...)
+* implement .on .off commands and css
+
+## Links
+
+* [node.js](http://nodejs.org/)
+* [socket.io](http://socket.io)
+* [NeDB](https://github.com/louischatriot/nedb)
+* [P5.js](http://p5js.org)
+* [Text to ASCII Art Generator](http://patorjk.com/software/taag/)
