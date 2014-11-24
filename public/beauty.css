@@ -109,6 +109,9 @@ input {
   background-color: #888;
   transition: background-color 0s;
 }
+#grid td.modifiedRemotely {
+  border: 2px dotted #FF7C00;
+}
 #thead {
   background-color:#999 !important;
   color:black;

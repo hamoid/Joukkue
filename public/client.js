@@ -21,16 +21,20 @@ LayerModel.prototype.createLayer = function() {
   this.layers[name] = l;
   return l;
 }
-LayerModel.prototype.setVars = function(name, txt) {
-  this.layers[name] = this.layers[name] || new this.Layer(name);
-  eval("var obj = " + (txt || "{}"));
-  this.layers[name].vars = obj;
+LayerModel.prototype.setVars = function(name, html) {
+  var l = this.layers[name] || new this.Layer(name);
+  eval("var obj = " + ($('<div>').html(html).text() || "{}"));
+  l.vars = html;
+  l.varsObj = obj;
+  this.layers[name] = l;
 }
-LayerModel.prototype.setDraw = function(name, txt) {
-  this.layers[name] = this.layers[name] || new this.Layer(name);
-  eval("var f = function(d) { " + txt + " }");
-  this.layers[name].draw = f;
-  this.layers[name].crashed = false;
+LayerModel.prototype.setDraw = function(name, html) {
+  var l = this.layers[name] || new this.Layer(name);
+  eval("var f = function(d) { " + $('<div>').html(html).text() + " }");
+  l.draw = html;
+  l.drawFunc = f;
+  l.crashed = false;
+  this.layers[name] = l;
   this.sortLayers();
 }
 LayerModel.prototype.draw = function(err_cb) {
@@ -38,7 +42,7 @@ LayerModel.prototype.draw = function(err_cb) {
   this.layersSorted.forEach(function(name) {
     push();
     try {
-      _this.layers[name].draw(_this.layers[name].vars);
+      _this.layers[name].drawFunc(_this.layers[name].varsObj);
     } catch(err) {
       _this.setCrashed(name);
       err_cb(name, err);
@@ -91,8 +95,7 @@ LayerModel.prototype.sortLayers = function() {
 
 var Joukkue = function() {
   this.socket = io();
-  this.lastEditAreaId = undefined;
-  this.lastEditSelection = undefined;
+  this.lastEdit = {};
   this.animPlaying = true;
   this.reservedVSpace = 0;
   this.layerModel = new LayerModel();
@@ -110,27 +113,18 @@ var Joukkue = function() {
   });
 
   this.socket.on(constants.CMD_SET_VARS, function(name, html) {
-    var cell = $('#' + name + '_vars');
-    // TODO: don't set it if not changed (or restore selection)
-    cell.html(html);
-    cell.addClass('flash');
-    setTimeout(function() { cell.removeClass('flash'); }, 100);
-    _this.layerModel.setVars(name, cell.text());
+    _this.updateLayerDOM(name, 'vars', html);
+    _this.layerModel.setVars(name, html);
   });
 
   this.socket.on(constants.CMD_SET_DRAW, function(name, html) {
-    var cell = $('#' + name + '_draw');
-    // TODO: don't set it if not changed (or restore selection)
-    cell.html(html);
-    cell.addClass('flash');
-    setTimeout(function() { cell.removeClass('flash'); }, 100);
-    _this.layerModel.setDraw(name, cell.text());
+    _this.updateLayerDOM(name, 'draw', html);
+    _this.layerModel.setDraw(name, html);
   });
 
   this.socket.on(constants.CMD_REMOVE, function(name) {
-    // if focused on disappearing layer, focus somewhere else
-    if(cc.lastEditAreaId.attr('id').indexOf(name) == 0) {
-      $('#but_help').focus();
+    if(cc.lastEdit.layerName == name) {
+      $('#row_chatBox').focus();
     }
 
     _this.layerModel.remove(name);
@@ -167,8 +161,8 @@ var Joukkue = function() {
       var varsTxt = $('#' + lyr[l].name + '_vars').text();
 
       // make real function/object out of strings
-      eval("lyr[l].draw = function(d) { " + drawTxt + " }");
-      eval("lyr[l].vars = " + (varsTxt || "{}"));
+      eval("lyr[l].drawFunc = function(d) { " + drawTxt + " }");
+      eval("lyr[l].varsObj = " + (varsTxt || "{}"));
     };
 
     _this.layerModel.setLayers(lyr);
@@ -228,12 +222,28 @@ Joukkue.prototype.addLayerToDOM = function(l) {
   $('#' + l.name + '_draw').focus();
 };
 
+Joukkue.prototype.updateLayerDOM = function(name, v, html) {
+  var cell = $('#' + name + '_' + v);
+  if(cell.html() == cc.layerModel.layers[name][v]) {
+    // If local copy is clean
+    cell.html(html);
+    cell.addClass('flash');
+    setTimeout(function() { cell.removeClass('flash'); }, 100);
+  } else if(cell.html() != html) {
+    // If I'm not the author
+    cell.addClass('modifiedRemotely');
+    this.addTextToChat(txt.layerModifiedRemotely);
+  } else {
+    cell.removeClass('modifiedRemotely');
+  }
+}
+
 Joukkue.prototype.onBlurEditable = function(e) {
   var t = $(e.currentTarget);
   var isGridElement = t.closest($('#grid')).length > 0;
   t.parent('tr').removeClass('editing');
   if(isGridElement) {
-    cc.lastEditAreaId.addClass('target');
+    cc.lastEdit.td.addClass('target');
   }
 };
 
@@ -243,7 +253,8 @@ Joukkue.prototype.onFocusEditable = function(e) {
   t.parent('tr').addClass('editing');
 
   if(isGridElement) {
-    cc.lastEditAreaId = t;
+    var idParts = t.attr('id').split('_');
+    cc.lastEdit = { td: t, layerName: idParts[0], varName: idParts[1], selection: undefined };
     $('#grid td.target').removeClass('target');
 
     // auto scroll up when clicking on last entry (if out of view)
@@ -253,6 +264,12 @@ Joukkue.prototype.onFocusEditable = function(e) {
     }
   }
 };
+
+Joukkue.prototype.revert = function() {
+  var le = cc.lastEdit;
+  le.td.html(cc.layerModel.layers[le.layerName][le.varName]);
+  le.td.removeClass('modifiedRemotely');
+}
 
 // A fix for the unexpected selection of text when
 // click-on-last-cell auto scroll up
@@ -265,18 +282,16 @@ Joukkue.prototype.onWindowResize = function() {
   $('#row_grid').height($(window).height() - this.reservedVSpace);
 }
 
-Joukkue.prototype.onPressEnter = function() {
+Joukkue.prototype.processChatMessage = function() {
   var cmd = $('#row_chatBox').text(),
-      idParts,
-      cmdParts;
+      cmdArgs;
   if(cmd.charAt(0) == '.' && cmd.length > 1) {
-    cmdParts = cmd.split(' ');
-    idParts = cc.lastEditAreaId.attr('id').split('_');
-    switch(cmdParts[0].substr(1)) {
+    cmdArgs = cmd.split(' ');
+    switch(cmdArgs[0].substr(1)) {
 
       case 'delete':
       case 'remove':
-        cc.socket.emit(constants.CMD_REMOVE, idParts[0]);
+        cc.socket.emit(constants.CMD_REMOVE, lastEdit.layerName);
         break;
 
       case 'help':
@@ -284,8 +299,8 @@ Joukkue.prototype.onPressEnter = function() {
         break;
 
       case 'name':
-        if(cmdParts[1].match(/\w+/)) {
-          this.socket.emit(constants.CMD_SET_NEW_NAME, cmdParts[1]);
+        if(cmdArgs[1].match(/\w+/)) {
+          this.socket.emit(constants.CMD_SET_NEW_NAME, cmdArgs[1]);
         } else {
           this.addTextToChat(txt.nameHowto);
         }
@@ -296,16 +311,16 @@ Joukkue.prototype.onPressEnter = function() {
         break;
 
       case 'off':
-        this.socket.emit(constants.CMD_SET_ENABLED, idParts[0], false);
+        this.socket.emit(constants.CMD_SET_ENABLED, lastEdit.layerName, false);
         break;
 
       case 'on':
-        this.socket.emit(constants.CMD_SET_ENABLED, idParts[0], true);
+        this.socket.emit(constants.CMD_SET_ENABLED, lastEdit.layerName, true);
         break;
 
       case 'room':
-        if(cmdParts[1].match(/\w+/)) {
-          this.socket.emit(constants.CMD_JOIN_ROOM, cmdParts[1]);
+        if(cmdArgs[1].match(/\w+/)) {
+          this.socket.emit(constants.CMD_JOIN_ROOM, cmdArgs[1]);
         } else {
           this.addTextToChat(txt.roomHowto);
         }
@@ -316,25 +331,32 @@ Joukkue.prototype.onPressEnter = function() {
         break;
 
       case 'top':
-        console.log('top', idParts[0]);
+        console.log('top', lastEdit.layerName);
         break;
 
       case 'bottom':
-        console.log('bottom', idParts[0]);
+        console.log('bottom', lastEdit.layerName);
         break;
 
       case 'up':
-        console.log('up', idParts[0]);
+        console.log('up', lastEdit.layerName);
         break;
 
       case 'down':
-        console.log('down', idParts[0]);
+        console.log('down', lastEdit.layerName);
+        break;
+
+      case 'revert':
+        cc.revert();
         break;
 
       case 'where':
       case 'who':
         this.socket.emit(constants.CMD_REQ_ROOM_INFO);
         break;
+
+      default:
+        this.addTextToChat(string.fmt(txt.unknownCmd, cmd));
     }
   } else {
     cc.socket.emit(constants.CMD_SAY, cmd);
@@ -390,25 +412,30 @@ $(function() {
 
     if(k == 27) {
       // ESC
-      cc.lastEditSelection = cc.saveSelection();
+      cc.lastEdit.selection = cc.saveSelection();
       $('#row_chatBox').focus();
-    } else if(e.ctrlKey) {
+    } else if(e.altKey) {
+
+      idParts = e.target.id.split('_');
+      layerName = idParts[0];
+      varType = idParts[1];
 
       if(k == 10 || k == 13) {
-        // CTRL + ENTER
-        idParts = e.target.id.split('_');
-        layerName = idParts[0];
-        varType = idParts[1];
+        // ALT + ENTER
         contentHTML = $(e.target).html();
         cc.socket.emit(constants.GET_LAYER_SET_CMD[varType],
                        layerName, contentHTML);
+        e.preventDefault();
 
       } else if(k == 8 || k == 46 ) {
-        // CTRL + DEL
-        idParts = e.target.id.split('_');
-        layerName = idParts[0];
+        // ALT + DEL
         cc.socket.emit(constants.CMD_REMOVE, layerName);
-        return false;
+        e.preventDefault();
+
+      } else if(k == 82) {
+        // ALT + R
+        cc.revert();
+        e.preventDefault();
       }
     }
   });
@@ -419,14 +446,14 @@ $(function() {
 
     if(k == 10 || k == 13) {
       // ENTER
-      cc.onPressEnter();
+      cc.processChatMessage();
       $('#row_chatBox').text('');
       e.preventDefault();
 
     } else if(k == 27) {
       // ESC
-      cc.lastEditAreaId.focus();
-      cc.restoreSelection(cc.lastEditSelection);
+      cc.lastEdit.td.focus();
+      cc.restoreSelection(cc.lastEdit.selection);
     }
   });
 

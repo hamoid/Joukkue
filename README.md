@@ -4,20 +4,15 @@ Work in progress.
 
 ## To do
 
-* layers contain more data:
-  * changedBy (server) = ['name1']
-* to server
-  * addEditor(layer)
-  * removeEditor(layer)
-* from server
-  * setEditors(layer, [] )
-* cell.onKeyPress, compare .length || content is diff, cell.editors.push(myself). Server sends editor list for each cell.
+* show layers being edited (yellow border):
+  * layer.editor = { abe: true, ram: true }
+  * toServer.setEditor(layer, true)
+  * fromServer.setEditors(layer, [] )
+  * cell.onKeyPress, compare .length || content is diff, cell.editors.push(myself). Server sends editor list for each cell.
+
 * show crashed layers (red border)
-* show changed cells (yellow border)
-* show conflict cell (orange border)
-  * don't rewrite, resolve. CTRL+ENTER=mine SHIFT+ESC=theirs
-* implement .up .down .top .bottom
-* implement .revert
+
+* implement .up .down .top .bottom, remove column #3
 
 * BUG? layer renamed itself as another layer. check.
 * Send noiseSeed, randomSeed
@@ -33,16 +28,19 @@ Work in progress.
 * Show chat in GUI
 * Show layer crashes in chat.
 * Chat, highlight on focus.
-* implement: .who .where .help .room .new
+* Implement: .who .where .help .room .new
 * ESC toggle between edit/chat
-* on cell focus, restore selection
-* on cell blur, store selection
+* On cell focus, restore selection
+* On cell blur, store selection
 * Scroll to bottom when editing last field
-* on cell blur, highlight border (used by .on, .off, .delete ...)
-* implement .on .off commands and css
-* implement .delete .rooms
-* implement .name
-* flash received cell
+* On cell blur, highlight border (used by .on, .off, .delete ...)
+* Implement .on .off commands and css
+* Implement .delete .rooms
+* Implement .name
+* Flash received cell
+* When we receive vars|draw, do not overwrite them with a function|obj, but keep html version to be able to undo and to compare current html with the received html. Create drawFunc|varsObj instead.
+* implement .revert alt+r
+* when we receive vars, draw, update original html. if current==original, change too, otherwise orange border (conflict)
 
 ## Links
 

@@ -11,8 +11,12 @@
   c.nameChanged =   '%s is %s from now on';
   c.roomInfo =      'Hi %s!\nYou are in the %s room %s';
   c.roomList =      'These are the existing rooms: %s';
+  c.unknownCmd =    'No idea what %s means. Maybe use .help ?';
 
   c.layerCrashed =  'Layer %s crashed with %s';
+  c.layerModifiedRemotely = 'The layer with orange borders was '
+  + 'changed remotely! Use .revert (alt+r) to accept their version '
+  + 'or click on the layer and press alt+enter to send your version';
   c.roomHowto =     'use: .room roomName';
   c.nameHowto =     'use: .name newName';
 
