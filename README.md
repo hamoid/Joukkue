@@ -7,15 +7,12 @@ Work in progress.
 * BUG: layer renamed itself as another layer. check.
 * layers contain more data:
   * isCrashed (local)
-  * changedBy (server) = {name1:23}
-  * // boolean or int? int implies more
-  * // connections to the server
+  * changedBy (server) = ['name1']
 * commands to server
   * addEditor(layer)
   * removeEditor(layer)
 * commands from server
-  * setEditors(layer, { people })
-
+  * setEditors(layer, [] )
 * .shiftKey + ESC to .revert changes to layer
 * If someone edits same cell as you, indicate changed (but don't rewrite your work without notice)
   * CTRL+ENTER sends your edit
@@ -23,10 +20,7 @@ Work in progress.
 * Indicate crashed layer
 * cell.onKeyPress, compare .length || content is diff, cell.editors.push(myself). Server sends editor list for each cell. Clients visualize editors.
 * implement
-  * .name .delete
-  * .up .down .top .bottom
-  * .rooms .revert
-
+  * .name .up .down .top .bottom .revert
 * Send noiseSeed, randomSeed
 * Meta: code can listen to coders coding :)
 * .save - http://www.websector.de/blog/2011/12/22/pushing-binary-image-data-using-node-js-and-socket-io/
@@ -47,6 +41,7 @@ Work in progress.
 * Scroll to bottom when editing last field
 * on cell blur, highlight border (used by .on, .off, .delete ...)
 * implement .on .off commands and css
+* implement .delete .rooms
 
 ## Links
 

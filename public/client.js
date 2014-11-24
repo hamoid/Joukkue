@@ -272,7 +272,8 @@ Joukkue.prototype.onPressEnter = function() {
         console.log('bottom', idParts[0]);
         break;
       case 'delete':
-        console.log('delete', idParts[0]);
+      case 'remove':
+        cc.socket.emit(constants.CMD_REMOVE, idParts[0]);
         break;
       case 'down':
         console.log('down', idParts[0]);
