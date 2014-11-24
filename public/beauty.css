@@ -96,12 +96,18 @@ input {
 }
 #grid td,
 #grid th {
+  background-color:#333333;
+  transition: background-color 0.5s;
   padding: 5px;
   vertical-align:top;
   text-align:left;
 }
 #grid td.target {
   border: 2px dotted #daca98;
+}
+#grid td.flash {
+  background-color: #888;
+  transition: background-color 0s;
 }
 #thead {
   background-color:#999 !important;
@@ -110,6 +116,7 @@ input {
 
 tr.editing td {
   background-color:#AAA !important;
+  transition: background-color 0.5s;
   opacity:1.0 !important;
   color:black;
 }

@@ -16,7 +16,6 @@ Work in progress.
 * show changed cells (yellow border)
 * show conflict cell (orange border)
   * don't rewrite, resolve. CTRL+ENTER=mine SHIFT+ESC=theirs
-* flash received cell
 * implement .up .down .top .bottom
 * implement .revert
 
@@ -43,6 +42,7 @@ Work in progress.
 * implement .on .off commands and css
 * implement .delete .rooms
 * implement .name
+* flash received cell
 
 ## Links
 

@@ -11,6 +11,7 @@ var LayerModel = function() {
     this.name = name;
     this.enabled = true;
     this.crashed = false;
+    this.editors = {};
     this.depth = _this.getNextDepth();
   }
 }
@@ -110,13 +111,19 @@ var Joukkue = function() {
 
   this.socket.on(constants.CMD_SET_VARS, function(name, html) {
     var cell = $('#' + name + '_vars');
+    // TODO: don't set it if not changed (or restore selection)
     cell.html(html);
+    cell.addClass('flash');
+    setTimeout(function() { cell.removeClass('flash'); }, 100);
     _this.layerModel.setVars(name, cell.text());
   });
 
   this.socket.on(constants.CMD_SET_DRAW, function(name, html) {
     var cell = $('#' + name + '_draw');
+    // TODO: don't set it if not changed (or restore selection)
     cell.html(html);
+    cell.addClass('flash');
+    setTimeout(function() { cell.removeClass('flash'); }, 100);
     _this.layerModel.setDraw(name, cell.text());
   });
 
@@ -244,8 +251,6 @@ Joukkue.prototype.onFocusEditable = function(e) {
     if(offset > 0) {
       $('#row_grid').scrollTop(offset + $('#row_grid').scrollTop());
     }
-  } else {
-    // here we can tell the server NOT EDITING
   }
 };
 
