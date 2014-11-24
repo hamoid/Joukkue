@@ -5,26 +5,28 @@
 var LayerModel = function() {
   this.layers = {};
   this.layersSorted = [];
+
+  var _this = this;
   this.Layer = function(name) {
     this.name = name;
     this.enabled = true;
     this.crashed = false;
-    this.depth = this.getNextDepth();
+    this.depth = _this.getNextDepth();
   }
 }
 LayerModel.prototype.createLayer = function() {
   var name = string.genID();
-  var l = new Layer(name);
+  var l = new this.Layer(name);
   this.layers[name] = l;
   return l;
 }
 LayerModel.prototype.setVars = function(name, txt) {
-  this.layers[name] = this.layers[name] || new Layer(name);
+  this.layers[name] = this.layers[name] || new this.Layer(name);
   eval("var obj = " + (txt || "{}"));
   this.layers[name].vars = obj;
 }
 LayerModel.prototype.setDraw = function(name, txt) {
-  this.layers[name] = this.layers[name] || new Layer(name);
+  this.layers[name] = this.layers[name] || new this.Layer(name);
   eval("var f = function(d) { " + txt + " }");
   this.layers[name].draw = f;
   this.layers[name].crashed = false;
