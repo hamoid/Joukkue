@@ -73,8 +73,23 @@ io.on('connection', function(socket) {
     ));
   }
 
+  function sendRoomList() {
+    var rooms = {};
+    dbLayers.find({}, { room: 1 }, function(err, layerData) {
+      layerData.map(function(l) { rooms[l.room] = true; });
+      socket.emit(constants.CMD_SAY, txt.serverName, string.fmt(
+        txt.roomList,
+        Object.keys(rooms).join(', ')
+      ));
+    });
+  }
+
   socket.on(constants.CMD_REQ_ROOM_INFO, function() {
     sendRoomInfo();
+  });
+
+  socket.on(constants.CMD_LIST_ROOMS, function() {
+    sendRoomList();
   });
 
   socket.on(constants.CMD_ADD_USER, function(username) {

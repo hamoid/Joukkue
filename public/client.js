@@ -299,6 +299,7 @@ Joukkue.prototype.onPressEnter = function() {
         }
         break;
       case 'rooms':
+        this.socket.emit(constants.CMD_LIST_ROOMS);
         break;
       case 'top':
         console.log('top', idParts[0]);

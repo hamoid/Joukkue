@@ -9,6 +9,7 @@
   c.wentToRoom =    '%s went to room %s',
   c.with =          'with';
   c.roomInfo =      'Hi %s!\nYou are in the %s room %s';
+  c.roomList =      'These are the existing rooms: %s';
 
   c.layerCrashed =  'Layer %s crashed with %s';
   c.roomHowto =     'use: .room roomName';
