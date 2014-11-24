@@ -259,11 +259,11 @@ Joukkue.prototype.onWindowResize = function() {
 }
 
 Joukkue.prototype.onPressEnter = function() {
-  var txt = $('#row_chatBox').text(),
+  var cmd = $('#row_chatBox').text(),
       idParts,
       cmdParts;
-  if(txt.charAt(0) == '.' && txt.length > 1) {
-    cmdParts = txt.split(' ');
+  if(cmd.charAt(0) == '.' && cmd.length > 1) {
+    cmdParts = cmd.split(' ');
     idParts = cc.lastEditAreaId.attr('id').split('_');
     switch(cmdParts[0].substr(1)) {
       case 'bottom':
@@ -310,7 +310,7 @@ Joukkue.prototype.onPressEnter = function() {
         break;
     }
   } else {
-    cc.socket.emit(constants.CMD_SAY, txt);
+    cc.socket.emit(constants.CMD_SAY, cmd);
   }
 }
 
