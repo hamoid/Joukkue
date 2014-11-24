@@ -72,15 +72,12 @@ LayerModel.prototype.setCrashed = function(name) {
 }
 LayerModel.prototype.sortLayers = function() {
   var layers = this.layers;
-  console.log(layers);
   var activeLayerNames = Object.keys(layers).filter(function(name) {
     return layers[name].enabled && !layers[name].crashed;
   });
-  console.log(activeLayerNames);
   var sortedDepths = activeLayerNames.map(function(name) {
     return { name: name, depth: layers[name].depth }
   });
-  console.log(sortedDepths);
   sortedDepths.sort(function(a, b) { return a.depth - b.depth});
   this.layersSorted = sortedDepths.map(function(o) { return o.name; })
 };
