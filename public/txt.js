@@ -8,11 +8,13 @@
   c.byYourself =    'by yourself';
   c.wentToRoom =    '%s went to room %s',
   c.with =          'with';
+  c.nameChanged =   '%s is %s from now on';
   c.roomInfo =      'Hi %s!\nYou are in the %s room %s';
   c.roomList =      'These are the existing rooms: %s';
 
   c.layerCrashed =  'Layer %s crashed with %s';
   c.roomHowto =     'use: .room roomName';
+  c.nameHowto =     'use: .name newName';
 
   c.help =          '<br/>Available commands:<br/>'
   + '_.rooms _ _ _ _ List available rooms<br/>'

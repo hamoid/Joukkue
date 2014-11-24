@@ -268,30 +268,36 @@ Joukkue.prototype.onPressEnter = function() {
     cmdParts = cmd.split(' ');
     idParts = cc.lastEditAreaId.attr('id').split('_');
     switch(cmdParts[0].substr(1)) {
-      case 'bottom':
-        console.log('bottom', idParts[0]);
-        break;
+
       case 'delete':
       case 'remove':
         cc.socket.emit(constants.CMD_REMOVE, idParts[0]);
         break;
-      case 'down':
-        console.log('down', idParts[0]);
-        break;
+
       case 'help':
         this.addTextToChat(txt.help.replace(/_/g, '&nbsp;'));
         break;
+
       case 'name':
+        if(cmdParts[1].match(/\w+/)) {
+          this.socket.emit(constants.CMD_SET_NEW_NAME, cmdParts[1]);
+        } else {
+          this.addTextToChat(txt.nameHowto);
+        }
         break;
+
       case 'new':
         this.addLayerToDOM(this.layerModel.createLayer());
         break;
+
       case 'off':
         this.socket.emit(constants.CMD_SET_ENABLED, idParts[0], false);
         break;
+
       case 'on':
         this.socket.emit(constants.CMD_SET_ENABLED, idParts[0], true);
         break;
+
       case 'room':
         if(cmdParts[1].match(/\w+/)) {
           this.socket.emit(constants.CMD_JOIN_ROOM, cmdParts[1]);
@@ -299,15 +305,27 @@ Joukkue.prototype.onPressEnter = function() {
           this.addTextToChat(txt.roomHowto);
         }
         break;
+
       case 'rooms':
         this.socket.emit(constants.CMD_LIST_ROOMS);
         break;
+
       case 'top':
         console.log('top', idParts[0]);
         break;
+
+      case 'bottom':
+        console.log('bottom', idParts[0]);
+        break;
+
       case 'up':
         console.log('up', idParts[0]);
         break;
+
+      case 'down':
+        console.log('down', idParts[0]);
+        break;
+
       case 'where':
       case 'who':
         this.socket.emit(constants.CMD_REQ_ROOM_INFO);

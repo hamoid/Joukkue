@@ -107,6 +107,15 @@ io.on('connection', function(socket) {
     );
   });
 
+  socket.on(constants.CMD_SET_NEW_NAME, function(username) {
+    io.to(socket.room).emit(
+      constants.CMD_SAY,
+      txt.serverName,
+      string.fmt(txt.nameChanged, socket.username, username)
+    );
+    socket.username = username;
+  });
+
 
 	socket.on(constants.CMD_JOIN_ROOM, function(newroom){
     // to you

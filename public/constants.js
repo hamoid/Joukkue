@@ -11,6 +11,7 @@
   c.CMD_SET_DEPTH =     'setLayerDepth';
   c.CMD_SET_ENABLED =   'setLayerEnabled';
   c.CMD_ADD_USER =      'addUser';
+  c.CMD_SET_NEW_NAME =  'setNewName';
   c.CMD_REMOVE =        'removeLayer';
   c.CMD_SET_LAYERS =    'setAllLayers';
 
