@@ -22,19 +22,43 @@ LayerModel.prototype.createLayer = function() {
   return l;
 }
 LayerModel.prototype.setVars = function(name, html) {
-  var l = this.layers[name] || new this.Layer(name);
-  eval("var obj = " + ($('<div>').html(html).text() || "{}"));
-  l.vars = html;
+  var obj, l = this.layers[name] || new this.Layer(name);
+
+  // we could try/catch, but at least it was eval'ed by sender
+  eval('obj = ' + ($('<div>').html(html).text() || '{}'));
   l.varsObj = obj;
+
+  l.vars = html;
+  l.crashed = false;
   this.layers[name] = l;
 }
 LayerModel.prototype.setDraw = function(name, html) {
-  var l = this.layers[name] || new this.Layer(name);
-  eval("var f = function(d) { " + $('<div>').html(html).text() + " }");
-  l.draw = html;
+  var f, l = this.layers[name] || new this.Layer(name);
+
+  // we could try/catch, but at least it was eval'ed by sender
+  eval('f = function(d) { ' + $('<div>').html(html).text() + ' }');
   l.drawFunc = f;
+
+  l.draw = html;
   l.crashed = false;
   this.layers[name] = l;
+  this.sortLayers();
+}
+LayerModel.prototype.setLayers = function(layers) {
+  var f, obj;
+  this.layers = layers;
+  for(var i in layers) {
+    var l = layers[i];
+
+    // we could try/catch, but at least it was eval'ed by sender
+    eval('f = function(d) { ' + $('<div>').html(l.draw).text() + ' }');
+    l.drawFunc = f;
+
+    // we could try/catch, but at least it was eval'ed by sender
+    eval('obj = ' + ($('<div>').html(l.vars).text() || '{}'));
+    l.varsObj = obj;
+  };
+
   this.sortLayers();
 }
 LayerModel.prototype.draw = function(err_cb) {
@@ -60,10 +84,6 @@ LayerModel.prototype.setDepth = function(name, dep) {
 }
 LayerModel.prototype.setEnabled = function(name, enabled) {
   this.layers[name].enabled = enabled;
-  this.sortLayers();
-}
-LayerModel.prototype.setLayers = function(lyr) {
-  this.layers = lyr;
   this.sortLayers();
 }
 LayerModel.prototype.getNextDepth = function() {
@@ -96,6 +116,7 @@ LayerModel.prototype.sortLayers = function() {
 var Joukkue = function() {
   this.socket = io();
   this.lastEdit = {};
+  this.modifiedLocally = {};
   this.animPlaying = true;
   this.reservedVSpace = 0;
   this.layerModel = new LayerModel();
@@ -150,24 +171,23 @@ var Joukkue = function() {
     }
   });
 
-
-  this.socket.on(constants.CMD_SET_LAYERS, function(lyr) {
+  this.socket.on(constants.CMD_SET_LAYERS, function(layers, modified) {
     $('#grid tr.editable').remove();
+    for(var l in layers) {
+      _this.addLayerToDOM(layers[l]);
+    }
+    _this.layerModel.setLayers(layers);
+    console.log('do something with', modified);
+  });
 
-    for(var l in lyr) {
-      _this.addLayerToDOM(lyr[l]);
-
-      var drawTxt = $('#' + lyr[l].name + '_draw').text();
-      var varsTxt = $('#' + lyr[l].name + '_vars').text();
-
-      // make real function/object out of strings
-      eval("lyr[l].drawFunc = function(d) { " + drawTxt + " }");
-      eval("lyr[l].varsObj = " + (varsTxt || "{}"));
-    };
-
-    _this.layerModel.setLayers(lyr);
+  this.socket.on(constants.CMD_SET_MODIFIED, function(id, len) {
+    $('#' + id).css('border-width', len);
   });
 };
+// orange dashed = conflict (someone sent layer I edited) > .revert
+// 1px yellow line = 1 other editing
+// 2px yellow line = 2 other editing
+// 2px yello dashed = 1 other, 1 me editing
 
 
 //  ╔╦╗╔═╗╔╦╗   ┬┬ ┬┌─┐┌─┐┬  ┬┌┐┌┌─┐
@@ -203,8 +223,20 @@ Joukkue.prototype.addTextToChat = function(msg) {
   $('#row_chatView').scrollTop($('#row_chatView')[0].scrollHeight);
 };
 
-Joukkue.prototype.addCrashToChat = function(name, err) {
-  this.addTextToChat(string.fmt(txt.layerCrashed, name, err));
+Joukkue.prototype.setCrashedInDOM = function(name, err, varType) {
+  function setCrashed(obj) {
+    obj.toggleClass('crashed', err !== false);
+  }
+  if(varType === undefined) {
+    setCrashed($('#' + name + '_draw'));
+    setCrashed($('#' + name + '_vars'));
+  } else {
+    setCrashed($('#' + name + '_' + varType));
+  }
+
+  if(err !== false) {
+    cc.addTextToChat(string.fmt(txt.layerCrashed, name, err));
+  }
 };
 
 Joukkue.prototype.addLayerToDOM = function(l) {
@@ -215,16 +247,15 @@ Joukkue.prototype.addLayerToDOM = function(l) {
     + string.fmt('<td id="%s_depth" class="c4" contentEditable="true">%s</td>', l.name, l.depth || '')
     + '</tr>'
   );
-
-  $('#' + l.name + '_vars').focus(this.onFocusEditable).blur(this.onBlurEditable).mouseup(this.onMouseUpEditable);
-  $('#' + l.name + '_draw').focus(this.onFocusEditable).blur(this.onBlurEditable).mouseup(this.onMouseUpEditable);
-  $('#' + l.name + '_depth').focus(this.onFocusEditable).blur(this.onBlurEditable).mouseup(this.onMouseUpEditable);
+  ['vars', 'draw', 'depth'].map(function(n) {
+    $('#' + l.name + '_' + n).focus(cc.onFocusEditable).blur(cc.onBlurEditable).mouseup(cc.onMouseUpEditable);
+  });
   $('#' + l.name + '_draw').focus();
 };
 
-Joukkue.prototype.updateLayerDOM = function(name, v, html) {
-  var cell = $('#' + name + '_' + v);
-  if(cell.html() == cc.layerModel.layers[name][v]) {
+Joukkue.prototype.updateLayerDOM = function(name, varType, html) {
+  var cell = $('#' + name + '_' + varType);
+  if(cell.html() == cc.layerModel.layers[name][varType]) {
     // If local copy is clean
     cell.html(html);
     cell.addClass('flash');
@@ -266,9 +297,14 @@ Joukkue.prototype.onFocusEditable = function(e) {
 };
 
 Joukkue.prototype.revert = function() {
-  var le = cc.lastEdit;
-  le.td.html(cc.layerModel.layers[le.layerName][le.varName]);
-  le.td.removeClass('modifiedRemotely');
+  cc.lastEdit.td.html(
+    cc.layerModel.layers[cc.lastEdit.layerName][cc.lastEdit.varName]
+  );
+  // hack
+  cc.onKeyup({ target: {
+    id: cc.lastEdit.td.attr('id'),
+    innerHTML: cc.lastEdit.td.html()
+  }});
 }
 
 // A fix for the unexpected selection of text when
@@ -278,8 +314,53 @@ Joukkue.prototype.onMouseUpEditable = function() {
   r.collapse();
 }
 
+Joukkue.prototype.onKeyup = function(e) {
+  var id = e.target.id,
+      idParts = id.split('_'),
+      layer = cc.layerModel.layers[idParts[0]],
+      modifiedLocally = e.target.innerHTML != layer[idParts[1]];
+
+  $('#' + id).toggleClass('modifiedByMe', modifiedLocally);
+
+  // emit only when modifiedLocally changes, not on each key press
+  if(modifiedLocally != (cc.modifiedLocally[id] || false)) {
+    cc.modifiedLocally[id] = modifiedLocally;
+    cc.socket.emit(constants.CMD_SET_MODIFIED, id, modifiedLocally);
+  }
+}
+
 Joukkue.prototype.onWindowResize = function() {
   $('#row_grid').height($(window).height() - this.reservedVSpace);
+}
+
+Joukkue.prototype.verifyAndSend = function(cell) {
+  var idParts = cell.id.split('_'),
+      layerName = idParts[0],
+      varType = idParts[1],
+      html = $(cell).html(),
+      text = $(cell).text(),
+      valid = true;
+
+  if(varType == 'depth') {
+    html = Number.parseFloat(text) || '';
+  } else {
+    try {
+      if(varType == 'vars') {
+        // sending empty is ok to replace old stuff
+        eval('var tempVars = ' + (text || '{}'));
+      } else {
+        eval('var tempDraw = function(d) {' + text + '}');
+      }
+    } catch(e) {
+      cc.setCrashedInDOM(layerName, e, varType);
+      valid = false;
+    }
+  }
+  if(valid) {
+    cc.setCrashedInDOM(layerName, false, varType);
+    cc.socket.emit(constants.GET_LAYER_SET_CMD[varType],
+                   layerName, html);
+  }
 }
 
 Joukkue.prototype.processChatMessage = function() {
@@ -291,7 +372,7 @@ Joukkue.prototype.processChatMessage = function() {
 
       case 'delete':
       case 'remove':
-        cc.socket.emit(constants.CMD_REMOVE, lastEdit.layerName);
+        this.socket.emit(constants.CMD_REMOVE, this.lastEdit.layerName);
         break;
 
       case 'help':
@@ -311,11 +392,11 @@ Joukkue.prototype.processChatMessage = function() {
         break;
 
       case 'off':
-        this.socket.emit(constants.CMD_SET_ENABLED, lastEdit.layerName, false);
+        this.socket.emit(constants.CMD_SET_ENABLED, this.lastEdit.layerName, false);
         break;
 
       case 'on':
-        this.socket.emit(constants.CMD_SET_ENABLED, lastEdit.layerName, true);
+        this.socket.emit(constants.CMD_SET_ENABLED, this.lastEdit.layerName, true);
         break;
 
       case 'room':
@@ -331,19 +412,19 @@ Joukkue.prototype.processChatMessage = function() {
         break;
 
       case 'top':
-        console.log('top', lastEdit.layerName);
+        console.log('top', this.lastEdit.layerName);
         break;
 
       case 'bottom':
-        console.log('bottom', lastEdit.layerName);
+        console.log('bottom', this.lastEdit.layerName);
         break;
 
       case 'up':
-        console.log('up', lastEdit.layerName);
+        console.log('up', this.lastEdit.layerName);
         break;
 
       case 'down':
-        console.log('down', lastEdit.layerName);
+        console.log('down', this.lastEdit.layerName);
         break;
 
       case 'revert':
@@ -377,7 +458,7 @@ function setup() {
 }
 
 function draw() {
-  cc.layerModel.draw(cc.addCrashToChat);
+  cc.layerModel.draw(cc.setCrashedInDOM);
 }
 
 
@@ -407,7 +488,7 @@ $(function() {
   });
 
   $('#grid').keydown(function(e) {
-    var idParts, layerName, varType, contentHTML,
+    var layerName,
         k = e.keyCode || e.charCode;
 
     if(k == 27) {
@@ -415,16 +496,11 @@ $(function() {
       cc.lastEdit.selection = cc.saveSelection();
       $('#row_chatBox').focus();
     } else if(e.altKey) {
-
-      idParts = e.target.id.split('_');
-      layerName = idParts[0];
-      varType = idParts[1];
+      layerName = e.target.id.split('_')[0];
 
       if(k == 10 || k == 13) {
         // ALT + ENTER
-        contentHTML = $(e.target).html();
-        cc.socket.emit(constants.GET_LAYER_SET_CMD[varType],
-                       layerName, contentHTML);
+        cc.verifyAndSend(e.target);
         e.preventDefault();
 
       } else if(k == 8 || k == 46 ) {
@@ -439,6 +515,8 @@ $(function() {
       }
     }
   });
+
+  $('#grid').keyup($.debounce(500, true, cc.onKeyup));
 
   $('#row_chatBox').focus(cc.onFocusEditable).blur(cc.onBlurEditable);
   $('#row_chatBox').keydown(function(e) {

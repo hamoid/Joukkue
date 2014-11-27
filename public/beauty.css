@@ -74,7 +74,7 @@ input {
 /* table.grid */
 
 #grid {
-  border-collapse: collapse;
+  border-collapse: separate;
   border-spacing:0px;
   font-family:monospace;
   font-size:9pt;
@@ -97,26 +97,37 @@ input {
 #grid td,
 #grid th {
   background-color:#333333;
+  border: 0px solid #DACA98;
   transition: background-color 0.5s;
   padding: 5px;
   vertical-align:top;
   text-align:left;
 }
 #grid td.target {
-  border: 2px dotted #daca98;
+  background-color: #444444;
 }
 #grid td.flash {
   background-color: #888;
   transition: background-color 0s;
 }
 #grid td.modifiedRemotely {
-  border: 2px dotted #FF7C00;
+  border-color: #FF7C00;
 }
+#grid td.modifiedByMe {
+  border-style: dashed;
+}
+#grid td.crashed {
+  background-image: url(/bug.gif);
+}
+
 #thead {
   background-color:#999 !important;
   color:black;
 }
 
+#grid tr.editing td {
+  border-color:black;
+}
 tr.editing td {
   background-color:#AAA !important;
   transition: background-color 0.5s;

@@ -12,12 +12,13 @@ dbLayers.persistence.setAutocompactionInterval(300 * 1000);
 //  └┴┘└─┘└─┘  └─┘└─┘┴└─ └┘ └─┘┴└─
 
 var app = require('express')();
+var modifiedCache = [];
 
 app.get('/', function(req, res) {
     res.sendFile(__dirname + '/index.html');
 });
 
-app.get('/*.(js|css|png)', function(req, res) {
+app.get('/*.(js|css|png|gif)', function(req, res) {
     res.sendFile(__dirname + "/public" + req.url);
 });
 
@@ -60,7 +61,7 @@ io.on('connection', function(socket) {
           layers[layerData[i].name] = layerData[i];
         }
       }
-      socket.emit(constants.CMD_SET_LAYERS, layers);
+      socket.emit(constants.CMD_SET_LAYERS, layers, modifiedCache[socket.room]);
     });
   }
 
@@ -213,9 +214,46 @@ io.on('connection', function(socket) {
           enabled
         );
       }
-    );  });
+    );
+  });
+
+  socket.on(constants.CMD_SET_MODIFIED, function(id, modified) {
+    var tooOld = Date.now() - 1000 * 60 * 5; // 5 min
+
+    modifiedCache[socket.room] = modifiedCache[socket.room] || {};
+    modifiedCache[socket.room][id] = modifiedCache[socket.room][id] || {};
+
+    if(modified) {
+      console.log(socket.username, 'modified');
+      modifiedCache[socket.room][id][socket.username] = Date.now();
+    } else {
+      console.log(socket.username, 'unmodified');
+      delete modifiedCache[socket.room][id][socket.username];
+    }
+
+    for(var lid in modifiedCache[socket.room]) {
+      for(var user in modifiedCache[socket.room][lid]) {
+        if(modifiedCache[socket.room][lid][user] < tooOld) {
+          delete modifiedCache[socket.room][lid][user];
+        }
+      }
+    }
+
+    console.log('emit', constants.CMD_SET_MODIFIED,
+                id, Object.keys(modifiedCache[socket.room][id]).length);
+
+    io.to(socket.room).emit(
+      constants.CMD_SET_MODIFIED,
+      id,
+      Object.keys(modifiedCache[socket.room][id]).length
+    );
+  });
 
   socket.on('disconnect', function() {
+    for(var lid in modifiedCache[socket.room]) {
+      delete modifiedCache[socket.room][lid][socket.username];
+    }
+
     socket.to(socket.room).emit(
       constants.CMD_SAY,
       txt.serverName,

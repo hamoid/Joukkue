@@ -4,20 +4,24 @@ Work in progress.
 
 ## To do
 
-* show layers being edited (yellow border):
-  * layer.editor = { abe: true, ram: true }
+* show layers dirty (yellow border):
+  * layer.editors = { abe: true, ram: true }
+  * border width = number of editors
   * toServer.setEditor(layer, true)
   * fromServer.setEditors(layer, [] )
   * cell.onKeyPress, compare .length || content is diff, cell.editors.push(myself). Server sends editor list for each cell.
 
-* show crashed layers (red border)
-
 * implement .up .down .top .bottom, remove column #3
+
+* how to set some vars, but not all? AND let new users receive all?
+  * forward sent messages, but stack them in DB.
+  * also stack them upon reception (don't overwrite object)
 
 * BUG? layer renamed itself as another layer. check.
 * Send noiseSeed, randomSeed
 * Meta: code can listen to coders coding :)
 * .save - http://www.websector.de/blog/2011/12/22/pushing-binary-image-data-using-node-js-and-socket-io/
+* chat: show different colors for cpu, local and others
 
 ## Done
 
@@ -41,6 +45,8 @@ Work in progress.
 * When we receive vars|draw, do not overwrite them with a function|obj, but keep html version to be able to undo and to compare current html with the received html. Create drawFunc|varsObj instead.
 * implement .revert alt+r
 * when we receive vars, draw, update original html. if current==original, change too, otherwise orange border (conflict)
+* add 'crashed' style to td
+* try evaling before sending (no point sending broken code)
 
 ## Links
 
