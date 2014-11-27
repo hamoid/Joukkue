@@ -473,6 +473,9 @@ function draw() {
 $(function() {
 
   $('#but_help').val(txt.label_help);
+  $('#but_help').click(function() {
+    cc.addTextToChat(txt.help.replace(/_/g, '&nbsp;'));
+  });
 
   $('#but_play_pause').val(txt.label_pause);
   $('#but_play_pause').click(function() {
