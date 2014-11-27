@@ -519,6 +519,8 @@ $(function() {
       }
     } else if(k == 9) {
       // TAB
+      document.execCommand('insertHTML', false, '&nbsp;&nbsp;');
+      e.preventDefault();
     }
   });
 
