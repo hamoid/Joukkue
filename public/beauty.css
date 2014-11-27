@@ -101,7 +101,11 @@ input {
   padding: 5px;
   vertical-align:top;
   text-align:left;
-  white-space: pre;
+  /* white-space: pre; */
+}
+#grid td p {
+  /* mac fix */
+  margin: 0px;
 }
 #grid td.target {
   background-color: #444444;
