@@ -75,7 +75,7 @@ input {
 
 #grid {
   border-collapse: separate;
-  border-spacing:0px;
+  border-spacing:1px;
   font-family:monospace;
   font-size:9pt;
   color:#999;
