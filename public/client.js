@@ -134,7 +134,7 @@ var Joukkue = function() {
   });
 
   this.socket.on(constants.CMD_SAY, function(username, msg){
-    _this.addTextToChat(username + ': ' + msg);
+    _this.addTextToChat(username + ': ' + $('<div/>').text(msg).html());
   });
 
   this.socket.on(constants.CMD_SET_VARS, function(name, html) {
