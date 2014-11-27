@@ -148,8 +148,12 @@ io.on('connection', function(socket) {
 	});
 
   socket.on(constants.CMD_SAY, function(msg) {
-    io.to(socket.room).emit(
-      constants.CMD_SAY, socket.username, msg);
+    socket.broadcast.to(socket.room).emit(
+      constants.CMD_SAY, socket.username, msg
+    );
+    socket.emit(
+      constants.CMD_SAY, socket.username, msg, true
+    );
   });
 
   socket.on(constants.CMD_SET_VARS, function(name, vars) {

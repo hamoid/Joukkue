@@ -133,8 +133,20 @@ var Joukkue = function() {
     _this.socket.emit(constants.CMD_ADD_USER, string.genRandomName());
   });
 
-  this.socket.on(constants.CMD_SAY, function(username, msg){
-    _this.addTextToChat(username + ': ' + $('<div/>').text(msg).html());
+  this.socket.on(constants.CMD_SAY, function(username, msg, self) {
+    var style;
+    if(self) {
+      style = 'chatFromSelf';
+    } else if(username == txt.serverName) {
+      style = 'chatFromServer';
+    } else {
+      style = 'chatFromOther';
+    }
+    _this.addTextToChat(
+      string.fmt('<span class="%s">%s: <b>%s</b></span>',
+                 style, username, $('<div/>').text(msg).html()
+                )
+    );
   });
 
   this.socket.on(constants.CMD_SET_VARS, function(name, html) {

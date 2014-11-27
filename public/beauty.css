@@ -138,3 +138,27 @@ tr.editing td {
   opacity:1.0 !important;
   color:black;
 }
+
+span.chatFromOther {
+  color: #666;
+}
+span.chatFromOther b {
+  color: #99C23D;
+  font-weight: normal;
+}
+
+span.chatFromServer {
+  color: #666;
+}
+span.chatFromServer b {
+  color: #D74665;
+  font-weight: normal;
+}
+
+span.chatFromSelf {
+  color: #666;
+}
+span.chatFromSelf b {
+  color: #888;
+  font-weight: normal;
+}
