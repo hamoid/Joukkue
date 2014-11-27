@@ -12,6 +12,10 @@ var LayerModel = function() {
     this.enabled = true;
     this.crashed = false;
     this.editors = {};
+    this.vars = '';
+    this.varsObj = {};
+    this.draw = '';
+    this.drawFunc = function() {};
     this.depth = _this.getNextDepth();
   }
 }
@@ -242,9 +246,9 @@ Joukkue.prototype.setCrashedInDOM = function(name, err, varType) {
 Joukkue.prototype.addLayerToDOM = function(l) {
   $('#grid').append(
     string.fmt('<tr class="editable %s">', l.enabled ? '' : 'disabled')
-    + string.fmt('<td id="%s_vars" class="c2" contentEditable="true">%s</td>', l.name, l.vars || '')
-    + string.fmt('<td id="%s_draw" class="c3" contentEditable="true">%s</td>', l.name, l.draw || '')
-    + string.fmt('<td id="%s_depth" class="c4" contentEditable="true">%s</td>', l.name, l.depth || '')
+    + string.fmt('<td id="%s_vars" contentEditable="true">%s</td>', l.name, l.vars || '')
+    + string.fmt('<td id="%s_draw" contentEditable="true">%s</td>', l.name, l.draw || '')
+    + string.fmt('<td id="%s_depth" contentEditable="true">%s</td>', l.name, l.depth || '')
     + '</tr>'
   );
   ['vars', 'draw', 'depth'].map(function(n) {
@@ -513,6 +517,8 @@ $(function() {
         cc.revert();
         e.preventDefault();
       }
+    } else if(k == 9) {
+      // TAB
     }
   });
 

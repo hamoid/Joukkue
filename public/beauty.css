@@ -94,14 +94,14 @@ input {
 #grid tr.disabled td {
   opacity:0.3;
 }
-#grid td,
-#grid th {
+#grid td {
   background-color:#333333;
   border: 0px solid #DACA98;
   transition: background-color 0.5s;
   padding: 5px;
   vertical-align:top;
   text-align:left;
+  white-space: pre;
 }
 #grid td.target {
   background-color: #444444;
