@@ -37,6 +37,8 @@ and press ALT+ENTER to send it to everybody.
 All players should see lots of ellipses being drawn.
 Anyone can create, change and delete layers. You can set your own rules for playing. For instance only one layer per person. Or only black and white. Or make a landscape together. Or a monster. You will have to agree (or not) on something :)
 
+Don't use // for comments. They don't work. Use /* */ instead.
+
 At the bottom there's a chat box. You can write messages to others there. If the message starts with a period ```.``` it means it's a command and it won't be sent to others, but processed. Try typing ```.help``` and press enter to find out about the available commands.
 
 If you create something nice, you can right click the canvas to save a copy.
