@@ -16,7 +16,7 @@ On a typical chat words are exchanged. With Joukkue you exchange shapes, colors 
 
 ## How to use it?
 
-Joukkue is meant to be used in a local network, but nothing stops you from running it on a server (anyone can access it though).
+Joukkue is meant to be used in a local network, but nothing stops you from running it on a server (anyone can access it though, no users or passwords).
 
 1. Install node/npm
 2. Download Joukkue (clone or download zip)
