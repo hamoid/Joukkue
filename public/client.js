@@ -7,7 +7,7 @@ var LayerModel = function() {
   this.layersSorted = [];
 
   var _this = this;
-  this.Layer = function(name) {
+  this.Layer = function(name, depth) {
     this.name = name;
     this.enabled = true;
     this.crashed = false;
@@ -16,17 +16,16 @@ var LayerModel = function() {
     this.varsObj = {};
     this.draw = '';
     this.drawFunc = function() {};
-    this.depth = _this.getNextDepth();
+    this.depth = depth;
   }
 }
-LayerModel.prototype.createLayer = function() {
-  var name = string.genID();
-  var l = new this.Layer(name);
+LayerModel.prototype.createLayer = function(name, depth) {
+  var l = new this.Layer(name, depth);
   this.layers[name] = l;
   return l;
 }
 LayerModel.prototype.setVars = function(name, html) {
-  var obj, l = this.layers[name] || new this.Layer(name);
+  var obj, l = this.layers[name];
 
   // we could try/catch, but at least it was eval'ed by sender
   eval('obj = ' + ($('<div>').html(html).text() || '{}'));
@@ -37,7 +36,7 @@ LayerModel.prototype.setVars = function(name, html) {
   this.layers[name] = l;
 }
 LayerModel.prototype.setDraw = function(name, html) {
-  var f, l = this.layers[name] || new this.Layer(name);
+  var f, l = this.layers[name];
 
   // we could try/catch, but at least it was eval'ed by sender
   eval('f = function(d) { ' + $('<div>').html(html).text() + ' }');
@@ -89,13 +88,6 @@ LayerModel.prototype.setDepth = function(name, dep) {
 LayerModel.prototype.setEnabled = function(name, enabled) {
   this.layers[name].enabled = enabled;
   this.sortLayers();
-}
-LayerModel.prototype.getNextDepth = function() {
-  var layers = this.layers;
-  var depths = Object.keys(layers).map(function(name) {
-    return layers[name].depth;
-  });
-  return Math.max.apply(Math, depths) + 2;
 }
 LayerModel.prototype.setCrashed = function(name) {
   this.layers[name].crashed = true;
@@ -149,6 +141,10 @@ var Joukkue = function() {
     );
   });
 
+  this.socket.on(constants.CMD_ADD_LAYER, function(name, depth) {
+    cc.addLayerToDOM(cc.layerModel.createLayer(name, depth));
+  });
+
   this.socket.on(constants.CMD_SET_VARS, function(name, html) {
     _this.layerModel.setVars(name, html);
     _this.updateLayerDOM(name, 'vars', html);
@@ -167,14 +163,12 @@ var Joukkue = function() {
     _this.layerModel.remove(name);
     $('#' + name + '_draw').unbind();
     $('#' + name + '_vars').unbind();
-    $('#' + name + '_depth').unbind();
     $('#' + name + '_draw').parent().remove();
   });
 
   this.socket.on(constants.CMD_SET_DEPTH, function(name, dep) {
-    dep = parseFloat(dep) || 666;
+    dep = parseFloat(dep) || 500;
     _this.layerModel.setDepth(name, dep);
-    $('#' + name + '_depth').text(dep);
   });
 
   this.socket.on(constants.CMD_SET_ENABLED, function(name, enabled) {
@@ -256,14 +250,14 @@ Joukkue.prototype.setCrashedInDOM = function(name, err, varType) {
 };
 
 Joukkue.prototype.addLayerToDOM = function(l) {
+  // TODO: not just append, but use depth to decide where it goes
   $('#grid').append(
     string.fmt('<tr class="editable %s">', l.enabled ? '' : 'disabled')
     + string.fmt('<td id="%s_vars" contentEditable="true">%s</td>', l.name, l.vars || '')
     + string.fmt('<td id="%s_draw" contentEditable="true">%s</td>', l.name, l.draw || '')
-    + string.fmt('<td id="%s_depth" contentEditable="true">%s</td>', l.name, l.depth || '')
     + '</tr>'
   );
-  ['vars', 'draw', 'depth'].map(function(n) {
+  ['vars', 'draw'].map(function(n) {
     $('#' + l.name + '_' + n).focus(cc.onFocusEditable).blur(cc.onBlurEditable).mouseup(cc.onMouseUpEditable);
   });
   $('#' + l.name + '_draw').focus();
@@ -357,20 +351,16 @@ Joukkue.prototype.verifyAndSend = function(cell) {
       text = $(cell).text(),
       valid = true;
 
-  if(varType == 'depth') {
-    html = Number.parseFloat(text) || '';
-  } else {
-    try {
-      if(varType == 'vars') {
-        // sending empty is ok to replace old stuff
-        eval('var tempVars = ' + (text || '{}'));
-      } else {
-        eval('var tempDraw = function(d) {' + text + '}');
-      }
-    } catch(e) {
-      cc.setCrashedInDOM(layerName, e, varType);
-      valid = false;
+  try {
+    if(varType == 'vars') {
+      // sending empty is ok to replace old stuff
+      eval('var tempVars = ' + (text || '{}'));
+    } else {
+      eval('var tempDraw = function(d) {' + text + '}');
     }
+  } catch(e) {
+    cc.setCrashedInDOM(layerName, e, varType);
+    valid = false;
   }
   if(valid) {
     cc.setCrashedInDOM(layerName, false, varType);
@@ -383,8 +373,8 @@ Joukkue.prototype.processChatMessage = function() {
   var cmd = $('#row_chatBox').text(),
       cmdArgs;
   if(cmd.charAt(0) == '.' && cmd.length > 1) {
-    cmdArgs = cmd.split(' ');
-    switch(cmdArgs[0].substr(1)) {
+    cmdArgs = cmd.substr(1).split(' ');
+    switch(cmdArgs[0]) {
 
       case 'delete':
       case 'remove':
@@ -404,7 +394,8 @@ Joukkue.prototype.processChatMessage = function() {
         break;
 
       case 'new':
-        this.addLayerToDOM(this.layerModel.createLayer());
+        //this.addLayerToDOM(this.layerModel.createLayer());
+        this.socket.emit(constants.CMD_ADD_LAYER);
         break;
 
       case 'off':
@@ -428,19 +419,11 @@ Joukkue.prototype.processChatMessage = function() {
         break;
 
       case 'top':
-        console.log('top', this.lastEdit.layerName);
-        break;
-
       case 'bottom':
-        console.log('bottom', this.lastEdit.layerName);
-        break;
-
       case 'up':
-        console.log('up', this.lastEdit.layerName);
-        break;
-
       case 'down':
-        console.log('down', this.lastEdit.layerName);
+        this.socket.emit(constants.CMD_SET_DEPTH, this.lastEdit.layerName, cmdArgs[0]);
+        console.log(cmdArgs[0], this.lastEdit.layerName);
         break;
 
       case 'revert':
@@ -503,7 +486,8 @@ $(function() {
 
   $('#but_new_layer').val(txt.label_new_layer);
   $('#but_new_layer').click(function() {
-    cc.addLayerToDOM(cc.layerModel.createLayer());
+    cc.socket.emit(constants.CMD_ADD_LAYER);
+    //cc.addLayerToDOM(cc.layerModel.createLayer());
   });
 
   $('#grid').keydown(function(e) {

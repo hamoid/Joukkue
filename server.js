@@ -156,6 +156,26 @@ io.on('connection', function(socket) {
     );
   });
 
+  socket.on(constants.CMD_ADD_LAYER, function() {
+    var layerName = string.genID();
+
+    var onDepthsFound = function(err, depthData) {
+      var depths = depthData.map(function(l) { return l.depth; });
+      depths.push(0);
+      var maxDepth = Math.max.apply(Math, depths);
+      var newDepth = (maxDepth + 1000) / 2;
+      dbLayers.insert(
+        { room: socket.room, name: layerName, depth: newDepth },
+        function(err, newDoc) {
+          io.to(socket.room).emit(
+            constants.CMD_ADD_LAYER, layerName, newDepth);
+        }
+      );
+    }
+
+    dbLayers.find({ room: socket.room }, { depth: 1 }, onDepthsFound);
+  })
+
   socket.on(constants.CMD_SET_VARS, function(name, vars) {
     dbLayers.update(
       { room: socket.room, name: name },
@@ -191,19 +211,54 @@ io.on('connection', function(socket) {
     );
   });
 
-  socket.on(constants.CMD_SET_DEPTH, function(name, dep) {
-    dbLayers.update(
-      { room:socket.room, name: name },
-      { $set: { room: socket.room, name: name, depth: dep  } },
-      { upsert: true },
-      function(err, numReplaced, newDoc) {
-        io.to(socket.room).emit(
-          constants.CMD_SET_DEPTH,
-          name,
-          dep
-        );
+  socket.on(constants.CMD_SET_DEPTH, function(name, cmd) {
+    // cmd can be: 'up' || 'down' || 'top' || 'bottom'
+
+    var onDepthsFound = function(err, depthData) {
+      var myDepth, newDepth, last;
+      var depths = depthData.map(function(l) {
+        if(l.name == name) myDepth = l.depth;
+        return l.depth;
+      });
+      depths.push(0);
+      depths.push(1000);
+      depths.sort(function(a,b) { return a-b; });
+      last = depths.length - 1;
+      newDepth = myDepth;
+      switch(cmd) {
+        case 'top':
+          newDepth = (depths[last] + depths[last-1]) / 2;
+          break;
+        case 'bottom':
+          newDepth = (depths[0] + depths[1]) / 2;
+          break;
+        case 'up':
+          var i = depths.indexOf(myDepth) + 1;
+          if(i < last) {
+            newDepth = (depths[i+1] + depths[i]) / 2;
+          }
+          break;
+        case 'down':
+          var i = depths.indexOf(myDepth) - 1;
+          if(i>0) {
+            newDepth = (depths[i-1] + depths[i]) / 2;
+          }
+          break;
       }
-    );
+      dbLayers.update(
+        { room:socket.room, name: name },
+        { $set: { depth: newDepth  } },
+        { },
+        function(err) {
+          io.to(socket.room).emit(
+            constants.CMD_SET_DEPTH,
+            name,
+            newDepth
+          );
+        }
+      );
+    }
+    dbLayers.find({ room: socket.room }, { name:1, depth:1 }, onDepthsFound);
   });
 
   socket.on(constants.CMD_SET_ENABLED, function(name, enabled) {
@@ -266,4 +321,3 @@ io.on('connection', function(socket) {
   });
 
 });
-
