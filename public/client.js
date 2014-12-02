@@ -86,6 +86,7 @@ LayerModel.prototype.remove = function(name) {
 LayerModel.prototype.setDepth = function(name, dep) {
   this.layers[name].depth = dep;
   this.sortLayers();
+  return this.layersSorted.indexOf(name);
 }
 LayerModel.prototype.setEnabled = function(name, enabled) {
   this.layers[name].enabled = enabled;
@@ -170,7 +171,15 @@ var Joukkue = function() {
 
   this.socket.on(constants.CMD_SET_DEPTH, function(name, dep) {
     dep = parseFloat(dep) || 500;
-    _this.layerModel.setDepth(name, dep);
+    var newPos = _this.layerModel.setDepth(name, dep);
+
+    var tr = $('#' + name + '_draw').parent();
+    tr.detach();
+    if(newPos == 0) {
+      $('#grid').append(tr);
+    } else {
+      tr.insertBefore($('#grid tr').eq(-newPos));
+    }
   });
 
   this.socket.on(constants.CMD_SET_ENABLED, function(name, enabled) {
@@ -189,7 +198,7 @@ var Joukkue = function() {
       _this.addLayerToDOM(layers[l]);
     }
     _this.layerModel.setLayers(layers);
-    console.log('do something with', modified);
+    console.log('todo: visualize modified: ', modified);
   });
 
   this.socket.on(constants.CMD_SET_MODIFIED, function(id, len) {
@@ -396,7 +405,6 @@ Joukkue.prototype.processChatMessage = function() {
         break;
 
       case 'new':
-        //this.addLayerToDOM(this.layerModel.createLayer());
         this.socket.emit(constants.CMD_ADD_LAYER);
         break;
 
@@ -489,7 +497,6 @@ $(function() {
   $('#but_new_layer').val(txt.label_new_layer);
   $('#but_new_layer').click(function() {
     cc.socket.emit(constants.CMD_ADD_LAYER);
-    //cc.addLayerToDOM(cc.layerModel.createLayer());
   });
 
   $('#grid').keydown(function(e) {
