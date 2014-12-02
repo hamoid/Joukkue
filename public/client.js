@@ -60,6 +60,8 @@ LayerModel.prototype.setLayers = function(layers) {
     // we could try/catch, but at least it was eval'ed by sender
     eval('obj = ' + ($('<div>').html(l.vars).text() || '{}'));
     l.varsObj = obj;
+
+    l.enabled = l.enabled !== false;
   };
 
   this.sortLayers();
