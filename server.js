@@ -55,7 +55,7 @@ io.on('connection', function(socket) {
 
   function sendLayersToUser() {
     var layers = {};
-    dbLayers.find({ room: socket.room }, function(err, layerData) {
+    dbLayers.find({ room: socket.room }).sort({ depth: -1 }).exec(function(err, layerData) {
       if (layerData.length > 0) {
         for(var i in layerData) {
           layers[layerData[i].name] = layerData[i];
