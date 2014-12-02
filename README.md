@@ -28,7 +28,7 @@ At this point you should have a local server running on port 3000.
 
 * From your computer: open http://localhost:3000
 * Find out your IP address. If, for instance, it's 192.168.0.30, tell other players to open http://192.168.0.30:3000 in their browsers (Firefox / Chrome / Chromium recommended).
-* Click on [new layer]. A new row should appear. In the middle column, enter some p5.js code, like
+* Click on [new layer]. A new row should appear. In the second column, enter some p5.js code, like
 
     ```ellipse(random(width), random(height), 30, 30);```
 
