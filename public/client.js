@@ -217,7 +217,7 @@ var Joukkue = function() {
 
 Joukkue.prototype.saveSelection = function() {
   if (window.getSelection) {
-    sel = window.getSelection();
+    var sel = window.getSelection();
     if (sel.getRangeAt && sel.rangeCount) {
       return sel.getRangeAt(0);
     }
@@ -230,7 +230,7 @@ Joukkue.prototype.saveSelection = function() {
 Joukkue.prototype.restoreSelection = function(range) {
   if (range) {
     if (window.getSelection) {
-      sel = window.getSelection();
+      var sel = window.getSelection();
       sel.removeAllRanges();
       sel.addRange(range);
     } else if (document.selection && range.select) {
@@ -548,8 +548,8 @@ $(function() {
 
     } else if(k == 27) {
       // ESC
-      cc.lastEdit.td.focus();
       cc.restoreSelection(cc.lastEdit.selection);
+      cc.lastEdit.td.focus();
     }
   });
 
