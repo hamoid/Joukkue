@@ -360,14 +360,17 @@ Joukkue.prototype.verifyAndSend = function(cell) {
       varType = idParts[1],
       html = $(cell).html(),
       text = $(cell).text(),
-      valid = true;
+      valid = true,
+      cmd = "";
 
   try {
     if(varType == 'vars') {
       // sending empty is ok to replace old stuff
       eval('var tempVars = ' + (text || '{}'));
+      cmd = constants.CMD_SET_VARS;
     } else {
       eval('var tempDraw = function(d) {' + text + '}');
+      cmd = constants.CMD_SET_DRAW;
     }
   } catch(e) {
     cc.setCrashedInDOM(layerName, e, varType);
@@ -375,8 +378,7 @@ Joukkue.prototype.verifyAndSend = function(cell) {
   }
   if(valid) {
     cc.setCrashedInDOM(layerName, false, varType);
-    cc.socket.emit(constants.GET_LAYER_SET_CMD[varType],
-                   layerName, html);
+    cc.socket.emit(cmd, layerName, html);
   }
 }
 

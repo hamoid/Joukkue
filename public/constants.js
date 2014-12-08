@@ -17,10 +17,4 @@
   c.CMD_SET_LAYERS    = 'setAllLayers';
   c.CMD_SET_MODIFIED  = 'layerModified';
 
-  c.GET_LAYER_SET_CMD = {
-    'vars':  c.CMD_SET_VARS,
-    'draw':  c.CMD_SET_DRAW,
-    'depth': c.CMD_SET_DEPTH
-  }
-
 })(typeof exports === 'undefined' ? this['constants'] = {} : exports);
