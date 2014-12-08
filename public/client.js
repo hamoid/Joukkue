@@ -330,6 +330,10 @@ Joukkue.prototype.revert = function() {
   }});
 }
 
+Joukkue.prototype.newLayer = function() {
+  cc.socket.emit(constants.CMD_ADD_LAYER);
+}
+
 // A fix for the unexpected selection of text when
 // click-on-last-cell auto scroll up
 Joukkue.prototype.onMouseUpEditable = function() {
@@ -500,7 +504,7 @@ $(function() {
 
   $('#but_new_layer').val(txt.label_new_layer);
   $('#but_new_layer').click(function() {
-    cc.socket.emit(constants.CMD_ADD_LAYER);
+    cc.newLayer();
   });
 
   $('#grid').keydown(function(e) {
@@ -527,6 +531,10 @@ $(function() {
       } else if(k == 82) {
         // ALT + R
         cc.revert();
+        e.preventDefault();
+      } else if(k == 78) {
+        // ALT + N
+        cc.newLayer();
         e.preventDefault();
       }
     } else if(k == 9) {
