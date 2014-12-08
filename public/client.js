@@ -278,7 +278,9 @@ Joukkue.prototype.updateLayerDOM = function(name, varType, html) {
   var cell = $('#' + name + '_' + varType);
   if(cell.html() == cc.layerModel.layers[name][varType]) {
     // If local copy is clean
-    cell.html(html);
+    if(cell.html() != html) {
+      cell.html(html);
+    }
     cell.addClass('flash');
     setTimeout(function() { cell.removeClass('flash'); }, 100);
   } else if(cell.html() != html) {
@@ -361,7 +363,7 @@ Joukkue.prototype.verifyAndSend = function(cell) {
       html = $(cell).html(),
       text = $(cell).text(),
       valid = true,
-      cmd = "";
+      cmd = '';
 
   try {
     if(varType == 'vars') {
