@@ -18,6 +18,7 @@ a {
 canvas {
   z-index:100;
   position:absolute;
+  min-width: 540px;
 }
 input {
   background-color: #666;
@@ -101,10 +102,11 @@ input {
   padding: 5px;
   vertical-align:top;
   text-align:left;
-  /* white-space: pre; */
+  min-width: 30px;
+  max-width: 400px;
 }
 #grid td p {
-  /* mac fix */
+  /* mac contenteditable fix */
   margin: 0px;
 }
 #grid td.target {
