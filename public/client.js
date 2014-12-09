@@ -162,13 +162,15 @@ var Joukkue = function() {
   });
 
   this.socket.on(constants.CMD_SET_VARS, function(name, html, selection) {
-    _this.layerModel.setVars(name, html, selection);
+    // Order important. First DOM.
     _this.updateLayerDOM(name, 'vars', html);
+    _this.layerModel.setVars(name, html, selection);
   });
 
   this.socket.on(constants.CMD_SET_DRAW, function(name, html) {
-    _this.layerModel.setDraw(name, html);
+    // Order important. First DOM.
     _this.updateLayerDOM(name, 'draw', html);
+    _this.layerModel.setDraw(name, html);
   });
 
   this.socket.on(constants.CMD_REMOVE, function(name) {
