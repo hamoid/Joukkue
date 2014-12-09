@@ -217,7 +217,7 @@ var Joukkue = function() {
 //   ║║║ ║║║║   ││ ││ ┬│ ┬│  │││││ ┬
 //  ═╩╝╚═╝╩ ╩  └┘└─┘└─┘└─┘┴─┘┴┘└┘└─┘
 
-Joukkue.prototype.saveSelection = function() {
+Joukkue.prototype.getSelection = function() {
   if (window.getSelection) {
     var sel = window.getSelection();
     if (sel.getRangeAt && sel.rangeCount) {
@@ -519,7 +519,7 @@ $(function() {
 
     if(k == 27) {
       // ESC
-      cc.lastEdit.selection = cc.saveSelection();
+      cc.lastEdit.selection = cc.getSelection();
       $('#row_chatBox').focus();
     } else if(e.altKey) {
       layerName = e.target.id.split('_')[0];
