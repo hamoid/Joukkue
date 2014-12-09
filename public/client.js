@@ -198,6 +198,8 @@ var Joukkue = function() {
       _this.addLayerToDOM(layers[l]);
     }
     _this.layerModel.setLayers(layers);
+    _this.clearCanvas();
+
     console.log('todo: visualize modified: ', modified);
   });
 
@@ -461,6 +463,13 @@ Joukkue.prototype.processChatMessage = function() {
   }
 }
 
+Joukkue.prototype.clearCanvas = function() {
+  // p5
+  background(0);
+  loadImage("/joukkue.png", function(i) {
+    image(i, width/2-i.width/2, height/2-i.height/2)
+  });
+}
 
 //  ╔═╗╔═╕  ┬┌─┐
 //  ╠═╝╚═╗  │└─┐
@@ -468,10 +477,7 @@ Joukkue.prototype.processChatMessage = function() {
 
 function setup() {
   createCanvas(540, 540);
-  background(0);
-  var img = loadImage("/joukkue.png", function(i) {
-    image(i, width/2-i.width/2, height/2-i.height/2)
-  });
+  cc.clearCanvas();
 }
 
 function draw() {
