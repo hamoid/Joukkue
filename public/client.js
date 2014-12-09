@@ -231,27 +231,18 @@ var Joukkue = function() {
 //  ═╩╝╚═╝╩ ╩  └┘└─┘└─┘└─┘┴─┘┴┘└┘└─┘
 
 Joukkue.prototype.getSelection = function() {
-  if (window.getSelection) {
-    var sel = window.getSelection();
-    if (sel.getRangeAt && sel.rangeCount) {
-      return sel.getRangeAt(0);
-    }
-  } else if (document.selection && document.selection.createRange) {
-    // TODO: IE <= 8? we can remove this
-    return document.selection.createRange();
+  var sel = window.getSelection();
+  if (sel.getRangeAt && sel.rangeCount) {
+    return sel.getRangeAt(0);
   }
   return null;
 }
 
 Joukkue.prototype.restoreSelection = function(range) {
   if (range) {
-    if (window.getSelection) {
-      var sel = window.getSelection();
-      sel.removeAllRanges();
-      sel.addRange(range);
-    } else if (document.selection && range.select) {
-      range.select();
-    }
+    var sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
   }
 }
 
