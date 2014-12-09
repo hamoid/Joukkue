@@ -287,21 +287,24 @@ Joukkue.prototype.addLayerToDOM = function(l) {
   $('#' + l.name + '_draw').focus();
 };
 
-Joukkue.prototype.updateLayerDOM = function(name, varType, html) {
-  var cell = $('#' + name + '_' + varType);
-  if(cell.html() == cc.layerModel.layers[name][varType]) {
-    // If local copy is clean
-    if(cell.html() != html) {
-      cell.html(html);
+Joukkue.prototype.updateLayerDOM = function(name, varType, receivedHtml) {
+  var view = $('#' + name + '_' + varType);
+  // We compare three versions:
+  // received html, view html and model html.
+
+  // If local copy is clean
+  if(view.html() == cc.layerModel.layers[name][varType]) {
+    if(view.html() != receivedHtml) {
+      view.html(receivedHtml);
     }
-    cell.addClass('flash');
-    setTimeout(function() { cell.removeClass('flash'); }, 100);
-  } else if(cell.html() != html) {
+    view.addClass('flash');
+    setTimeout(function() { view.removeClass('flash'); }, 100);
+  } else if(view.html() != receivedHtml) {
     // If I'm not the author
-    cell.addClass('modifiedRemotely');
+    view.addClass('modifiedRemotely');
     this.addTextToChat(txt.layerModifiedRemotely);
   } else {
-    cell.removeClass('modifiedRemotely');
+    view.removeClass('modifiedRemotely');
   }
 }
 
@@ -336,7 +339,7 @@ Joukkue.prototype.revert = function() {
   cc.lastEdit.td.html(
     cc.layerModel.layers[cc.lastEdit.layerName][cc.lastEdit.varName]
   );
-  // hack
+  // hack. simulate key up.
   cc.onKeyup({ target: {
     id: cc.lastEdit.td.attr('id'),
     innerHTML: cc.lastEdit.td.html()
