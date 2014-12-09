@@ -215,7 +215,10 @@ var Joukkue = function() {
     _this.layerModel.setLayers(layers);
     _this.clearCanvas();
 
-    console.log('todo: visualize modified: ', modified);
+    for(var lid in modified) {
+      var len = Object.keys(modified[lid]).length;
+      $('#' + lid).css('border-width', len);
+    }
   });
 
   this.socket.on(constants.CMD_SET_MODIFIED, function(id, len) {
