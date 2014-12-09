@@ -283,10 +283,8 @@ io.on('connection', function(socket) {
     modifiedCache[socket.room][id] = modifiedCache[socket.room][id] || {};
 
     if(modified) {
-      console.log(socket.username, 'modified');
       modifiedCache[socket.room][id][socket.username] = Date.now();
     } else {
-      console.log(socket.username, 'unmodified');
       delete modifiedCache[socket.room][id][socket.username];
     }
 
@@ -297,9 +295,6 @@ io.on('connection', function(socket) {
         }
       }
     }
-
-    console.log('emit', constants.CMD_SET_MODIFIED,
-                id, Object.keys(modifiedCache[socket.room][id]).length);
 
     io.to(socket.room).emit(
       constants.CMD_SET_MODIFIED,
