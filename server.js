@@ -176,14 +176,14 @@ io.on('connection', function(socket) {
     dbLayers.find({ room: socket.room }, { depth: 1 }, onDepthsFound);
   })
 
-  socket.on(constants.CMD_SET_VARS, function(name, vars) {
+  socket.on(constants.CMD_SET_VARS, function(name, vars, selection) {
     dbLayers.update(
       { room: socket.room, name: name },
       { $set: { room: socket.room, name: name, vars: vars } },
       { upsert: true },
       function(err, numReplaced, newDoc) {
         io.to(socket.room).emit(
-          constants.CMD_SET_VARS, name, vars);
+          constants.CMD_SET_VARS, name, vars, selection);
       }
     );
   });

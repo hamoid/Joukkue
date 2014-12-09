@@ -24,12 +24,25 @@ LayerModel.prototype.createLayer = function(name, depth) {
   this.layers[name] = l;
   return l;
 }
-LayerModel.prototype.setVars = function(name, html) {
+LayerModel.prototype.setVars = function(name, html, selection) {
   var obj, l = this.layers[name];
 
-  // we could try/catch, but at least it was eval'ed by sender
-  eval('obj = ' + ($('<div>').html(html).text() || '{}'));
-  l.varsObj = obj;
+  if(selection) {
+    try {
+      eval('obj = {' + selection + '}');
+      for(var i in obj) {
+        l.varsObj[i] = obj[i];
+      }
+    } catch(e) {
+      selection = false;
+    }
+  }
+
+  if(!selection) {
+    // we could try/catch, but at least it was eval'ed by sender
+    eval('obj = ' + ($('<div>').html(html).text() || '{}'));
+    l.varsObj = obj;
+  }
 
   l.vars = html;
   l.crashed = false;
@@ -148,8 +161,8 @@ var Joukkue = function() {
     cc.addLayerToDOM(cc.layerModel.createLayer(name, depth));
   });
 
-  this.socket.on(constants.CMD_SET_VARS, function(name, html) {
-    _this.layerModel.setVars(name, html);
+  this.socket.on(constants.CMD_SET_VARS, function(name, html, selection) {
+    _this.layerModel.setVars(name, html, selection);
     _this.updateLayerDOM(name, 'vars', html);
   });
 
@@ -224,6 +237,7 @@ Joukkue.prototype.getSelection = function() {
       return sel.getRangeAt(0);
     }
   } else if (document.selection && document.selection.createRange) {
+    // TODO: IE <= 8? we can remove this
     return document.selection.createRange();
   }
   return null;
@@ -264,6 +278,7 @@ Joukkue.prototype.setCrashedInDOM = function(name, err, varType) {
 
 Joukkue.prototype.addLayerToDOM = function(l) {
   // TODO: not just append, but use depth to decide where it goes
+  // Update: layers are now sent sorted, so comment maybe no longer relevant
   $('#grid').append(
     string.fmt('<tr class="editable %s">', l.enabled ? '' : 'disabled')
     + string.fmt('<td id="%s_vars" contentEditable="true">%s</td>', l.name, l.vars || '')
@@ -367,26 +382,21 @@ Joukkue.prototype.verifyAndSend = function(cell) {
       layerName = idParts[0],
       varType = idParts[1],
       html = $(cell).html(),
-      text = $(cell).text(),
-      valid = true,
-      cmd = '';
+      text = $(cell).text();
 
   try {
     if(varType == 'vars') {
       // sending empty is ok to replace old stuff
       eval('var tempVars = ' + (text || '{}'));
-      cmd = constants.CMD_SET_VARS;
+      var selection = window.getSelection().toString();
+      cc.socket.emit(constants.CMD_SET_VARS, layerName, html, selection);
     } else {
       eval('var tempDraw = function(d) {' + text + '}');
-      cmd = constants.CMD_SET_DRAW;
+      cc.socket.emit(constants.CMD_SET_DRAW, layerName, html);
     }
+    cc.setCrashedInDOM(layerName, false, varType);
   } catch(e) {
     cc.setCrashedInDOM(layerName, e, varType);
-    valid = false;
-  }
-  if(valid) {
-    cc.setCrashedInDOM(layerName, false, varType);
-    cc.socket.emit(cmd, layerName, html);
   }
 }
 
