@@ -276,7 +276,7 @@ Joukkue.prototype.addLayerToDOM = function(l) {
   // TODO: not just append, but use depth to decide where it goes
   // Update: layers are now sent sorted, so comment maybe no longer relevant
   $('#grid').append(
-    string.fmt('<tr class="editable %s">', l.enabled ? '' : 'disabled')
+    string.fmt('<tr class="editable %s">', l.enabled === false ? 'disabled' : '')
     + string.fmt('<td id="%s_vars" contentEditable="true">%s</td>', l.name, l.vars || '')
     + string.fmt('<td id="%s_draw" contentEditable="true">%s</td>', l.name, l.draw || '')
     + '</tr>'
