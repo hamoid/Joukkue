@@ -7,6 +7,12 @@ var editorSocket = new BCSocket(null, {
 });
 var shareJsConnection = new window.sharejs.Connection(editorSocket);
 
+/*
+  Returns an editor object containing:
+  - elem : the attached textarea
+  - cm   : the associated CodeMirror object
+  - doc  : the associated ShareJS object
+*/
 function addNewEditor(room, layer, id) {
   var ed = {};
 
@@ -35,8 +41,6 @@ function addNewEditor(room, layer, id) {
 
   // augment cm object with our index to find it later
   ed.cm.joukkue_index = id;
-  // our own flag to know whether this editor's code is runnable
-  ed.clean = true;
 
   // attach ShareJS to CodeMirror
   ed.doc = shareJsConnection.get(room, layer);
@@ -50,7 +54,6 @@ function addNewEditor(room, layer, id) {
 
   return ed;
 }
-
 
 // ╔╦╗┌─┐┌┬┐┌─┐  ┌─┐┬ ┬┌─┐┌┐┌┌┐┌┌─┐┬  
 // ║║║├┤  │ ├─┤  │  ├─┤├─┤││││││├┤ │  
@@ -73,6 +76,122 @@ metaSocket.onmessage = function(msg) {
   }
 }
 
+//  ╦  ┌─┐┬ ┬┌─┐┬─┐╔╦╗┌─┐┌┬┐┌─┐┬
+//  ║  ├─┤└┬┘├┤ ├┬┘║║║│ │ ││├┤ │
+//  ╩═╝┴ ┴ ┴ └─┘┴└─╩ ╩└─┘─┴┘└─┘┴─┘
+
+function LayerModel() {
+  this.layers = {};
+  this.layersSorted = [];
+
+  this.Layer = function(name) {
+    this.name = name;
+    this.enabled = true;
+    this.crashed = false;
+    this.editors = {};
+    this.varsObj = {};
+    this.drawFunc = function() {};
+  }
+}
+
+LayerModel.prototype.createLayer = function(name) {
+  var l = new this.Layer(name);
+
+  // var varsEditor = addNewEditor('room', this.VARS + name, name);
+  var codeEditor = addNewEditor('room', this.CODE + name, name);
+  
+  // l.editors[this.VARS] = varsEditor;
+  l.editors[this.CODE] = codeEditor;
+  
+  this.layers[name] = l;
+  this.layersSorted.push(l);
+};
+
+LayerModel.prototype.draw = function() {
+  var _this = this;
+  this.layersSorted.forEach(function(name) {
+    push();
+    try {
+      _this.layers[name].drawFunc(_this.layers[name].varsObj);
+    } catch(err) {
+      _this.setCrashed(name);
+      err_cb(name, err);
+    }
+    pop();
+  });
+}
+
+LayerModel.prototype.draw = function() {
+  var layer;
+
+  for (var i=0; i < this.layersSorted.length; i++) {
+    push(); // p5
+    layer = this.layersSorted[i];
+    if (!layer.crashed && layer.drawFunc) {
+      try {
+        layer.drawFunc();
+      } catch(e) {
+        layer.crashed = true;
+        layer.editors[this.CODE].cm.getWrapperElement().classList.add("error");
+      } 
+    }
+    pop(); // p5
+  }
+};
+
+LayerModel.prototype.publish = function(name) {
+  var layer = this.layers[name];
+  // TODO: figure out whether it's the code or the vars that got published
+  var editor = layer.editors[this.CODE];
+  var code = editor.cm.doc.getValue();
+  try {
+    eval('var f = function(d) { ' + code + ' }');
+    layer.drawFunc = f;
+    layer.crashed = false;
+    editor.cm.getWrapperElement().classList.remove("error");
+  } catch(e) {
+    layer.crashed = true;
+    editor.cm.getWrapperElement().classList.add("error");
+  }
+}
+
+LayerModel.VARS = 'vars';
+LayerModel.CODE = 'code';
+
+//   ╦┌─┐┬ ┬┬┌─┬┌─┬ ┬┌─┐
+//   ║│ ││ │├┴┐├┴┐│ │├┤
+//  ╚╝└─┘└─┘┴ ┴┴ ┴└─┘└─┘
+
+function Joukkue() {
+  var STARTING_LAYERS = 20;
+
+  this.layerModel = new LayerModel();
+  for(var i=0; i < STARTING_LAYERS; i++) {
+    this.layerModel.createLayer(i);
+  }
+}
+
+Joukkue.prototype.clearCanvas = function() {
+  // p5
+  background(0);
+  loadImage("/public/joukkue.png", function(i) {
+    image(i, width/2-i.width/2, height/2-i.height/2)
+  });
+};
+
+Joukkue.prototype.draw = function() {
+  this.layerModel.draw();
+};
+
+// ====
+// CodeMirror handler for alt-enter
+CodeMirror.commands.joukkueEval = function(cm) {
+  var which = cm.joukkue_index;
+  J.layerModel.publish(which);
+}
+
+// Start the engines. Vroom!
+var J = new Joukkue();
 
 //  ╔═╗╔═╕  ┬┌─┐
 //  ╠═╝╚═╗  │└─┐
@@ -80,49 +199,9 @@ metaSocket.onmessage = function(msg) {
 
 function setup() {
   createCanvas(540, 540);
-  background(0);
-  loadImage("/public/joukkue.png", function(i) {
-    image(i, width/2-i.width/2, height/2-i.height/2)
-  });
+  J.clearCanvas();
 }
 
 function draw() {
-    for (var i=0; i < editors.length; i++) {
-        if (editors[i].clean && editors[i].code) {
-            try {
-                editors[i].code();
-            } catch(e) {
-                editors[i].clean = false;
-                editors[i].cm.getWrapperElement().classList.add("error");
-            } 
-        }
-    }
+  J.draw();
 }
-
-
-//   ╦┌─┐┬ ┬┬┌─┬┌─┬ ┬┌─┐
-//   ║│ ││ │├┴┐├┴┐│ │├┤
-//  ╚╝└─┘└─┘┴ ┴┴ ┴└─┘└─┘
-
-var editors = [];
-for(var i=0; i<20; i++) {
-    editors.push(addNewEditor('room1', 'code'+i, i));
-}
-
-// handler for alt-enter
-CodeMirror.commands.joukkueEval = function(cm) {
-    var code = cm.doc.getValue();
-    var which = int(cm.joukkue_index);
-    
-    var editor = editors[which];
-    try {
-        eval('f = function(d) { ' + code + ' }');
-        editor.code = f;
-        editor.clean = true;
-        editor.cm.getWrapperElement().classList.remove("error");
-    } catch(e) {
-        editor.clean = false;
-        editor.cm.getWrapperElement().classList.add("error");
-    }
-}
-
