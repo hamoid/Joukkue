@@ -549,6 +549,8 @@ $(function() {
         e.preventDefault();
       } else if(k == 78) {
         // ALT + N
+        // TODO: maybe this is wrong? 78 might be L key!
+        // TODO: use keys JKLI = left down right up
         cc.newLayer();
         e.preventDefault();
       }
