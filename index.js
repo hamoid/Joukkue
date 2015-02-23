@@ -1,52 +1,78 @@
-// ShareJS connection
-var s = new BCSocket(null, {
-    reconnect: true
+// ╔═╗┬ ┬┌─┐┬─┐┌─┐  ┬┌─┐
+// ╚═╗├─┤├─┤├┬┘├┤   │└─┐
+// ╚═╝┴ ┴┴ ┴┴└─└─┘o└┘└─┘
+
+var editorSocket = new BCSocket(null, {
+  reconnect: true
 });
-var sjs = new window.sharejs.Connection(s);
+var shareJsConnection = new window.sharejs.Connection(editorSocket);
 
 function addNewEditor(room, layer, id) {
-    var ed = {};
+  var ed = {};
 
-    // add new textarea to the editor
-    var column = document.getElementById("right_column");
-    var textarea = document.createElement("textarea");
-    textarea.id = id;
-    column.appendChild(textarea);
+  // add new textarea to the editor
+  var column = document.getElementById("right_column");
+  var textarea = document.createElement("textarea");
+  textarea.id = id;
+  column.appendChild(textarea);
 
-    // attach CodeMirror to the new textarea
-    ed.elem = document.getElementById(id);
-    ed.cm = CodeMirror.fromTextArea(ed.elem, {
-      //lineNumbers: true,
-      matchBrackets: true,
-      autoCloseBrackets: true,
-      styleActiveLine: true,
-      extraKeys: { 
-        'Ctrl-Q': 'toggleComment',
-        'Ctrl-Space': 'autocomplete',
-        'Alt-Enter': 'joukkueEval'
-      },
-      tabSize: 2,
-      theme: 'zenburn',
-      mode: { name: 'javascript', json: false, globalVars: true }
-    });
+  // attach CodeMirror to the new textarea
+  ed.elem = document.getElementById(id);
+  ed.cm = CodeMirror.fromTextArea(ed.elem, {
+    //lineNumbers: true,
+    matchBrackets: true,
+    autoCloseBrackets: true,
+    styleActiveLine: true,
+    extraKeys: { 
+      'Ctrl-Q': 'toggleComment',
+      'Ctrl-Space': 'autocomplete',
+      'Alt-Enter': 'joukkueEval'
+    },
+    tabSize: 2,
+    theme: 'zenburn',
+    mode: { name: 'javascript', json: false, globalVars: true }
+  });
 
-    // augment cm object with our index to find it later
-    ed.cm.joukkue_index = id;
-    // our own flag to know whether this editor's code is runnable
-    ed.clean = true;
+  // augment cm object with our index to find it later
+  ed.cm.joukkue_index = id;
+  // our own flag to know whether this editor's code is runnable
+  ed.clean = true;
 
-    // attach ShareJS to CodeMirror
-    ed.doc = sjs.get(room, layer);
-    ed.doc.subscribe();
-    ed.doc.whenReady(function () {
-      if (!ed.doc.type) ed.doc.create('text');
-      if (ed.doc.type && ed.doc.type.name === 'text') {
-        ed.doc.attachCodeMirror(ed.cm);
-      }
-    });
+  // attach ShareJS to CodeMirror
+  ed.doc = shareJsConnection.get(room, layer);
+  ed.doc.subscribe();
+  ed.doc.whenReady(function () {
+    if (!ed.doc.type) ed.doc.create('text');
+    if (ed.doc.type && ed.doc.type.name === 'text') {
+      ed.doc.attachCodeMirror(ed.cm);
+    }
+  });
 
-    return ed;
+  return ed;
 }
+
+
+// ╔╦╗┌─┐┌┬┐┌─┐  ┌─┐┬ ┬┌─┐┌┐┌┌┐┌┌─┐┬  
+// ║║║├┤  │ ├─┤  │  ├─┤├─┤││││││├┤ │  
+// ╩ ╩└─┘ ┴ ┴ ┴  └─┘┴ ┴┴ ┴┘└┘┘└┘└─┘┴─┘
+
+var metaSocket = new BCSocket('/meta', {
+  reconnect: true
+});
+metaSocket.onopen = function() {
+}
+metaSocket.onmessage = function(msg) {
+  if(msg.data && msg.data.op && msg.data.arg) {
+    switch(msg.data.op) {
+      case 'say':
+        console.log('server says', msg.data.arg);
+      break;
+      default:
+        console.log('unknown message', msg.data);
+    }
+  }
+}
+
 
 //  ╔═╗╔═╕  ┬┌─┐
 //  ╠═╝╚═╗  │└─┐
@@ -72,6 +98,7 @@ function draw() {
         }
     }
 }
+
 
 //   ╦┌─┐┬ ┬┬┌─┬┌─┬ ┬┌─┐
 //   ║│ ││ │├┴┐├┴┐│ │├┤
