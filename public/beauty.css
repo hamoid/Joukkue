@@ -1,5 +1,4 @@
 /* elements */
-
 html, body {
   height: 100%;
 	padding: 0px;
@@ -163,4 +162,12 @@ span.chatFromSelf {
 span.chatFromSelf b {
   color: #888;
   font-weight: normal;
+}
+.CodeMirror {
+  height: auto;
+  margin-bottom: 2px;
+  font-size: 125%;
+}
+.CodeMirror-activeline-background {
+  background-color: #444 !important;
 }

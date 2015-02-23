@@ -1,9 +1,12 @@
 <!DOCTYPE html>
 <html>
   <head>
+    <title>Joukkue</title>
+
     <link rel="stylesheet" href="/lib/codemirror.css">
     <link rel="stylesheet" href="/theme/zenburn.css">
     <link rel="stylesheet" href="/addon/hint/show-hint.css">
+    <link rel="stylesheet" href="/public/beauty.css">
     <script src="/lib/codemirror.js"></script>
     <script src="/channel/bcsocket.js"></script>
     <script src="/share.uncompressed.js"></script>
@@ -14,69 +17,13 @@
     <script src="/addon/hint/javascript-hint.js"></script>
     <script src="/addon/selection/active-line.js"></script>
     <script src="/mode/javascript/javascript.js"></script>
-
-    <style>
-      body {
-        background-color: #333;
-      }
-      .CodeMirror {
-        height: auto;
-        margin-bottom: 2px;
-        font-size: 125%;
-      }
-      .CodeMirror-activeline-background {
-        background-color: #444 !important;
-      }
-    </style>
+    <script src="/public/p5.min.js"></script>
+    <script src="/public/p5.sound.min.js"></script>
   </head>
   <body>
-    <script>
-      // connection
-      var s = new BCSocket(null, {
-        reconnect: true
-      });
-      var sjs = new window.sharejs.Connection(s);
+  <div id="leftBackground"></div>
+  <div id="right_column"></div>
 
-      var editors = [];
-
-      function getNewEditor(room, layer, id) {
-        var ed = {};
-
-        document.write('<textarea id="' + id + '">...</textarea>');
-
-        CodeMirror.commands.joukkueEval = function() {
-          console.log('joukkue eval');
-        }
-
-        ed.elem = document.getElementById(id);
-        ed.cm = CodeMirror.fromTextArea(ed.elem, {
-          //lineNumbers: true,
-          matchBrackets: true,
-          autoCloseBrackets: true,
-          styleActiveLine: true,
-          extraKeys: { 
-            'Ctrl-Q': 'toggleComment',
-            'Ctrl-Space': 'autocomplete',
-            'Alt-Enter': 'joukkueEval'
-          },
-          tabSize: 2,
-          theme: 'zenburn',
-          mode: { name: 'javascript', json: false, globalVars: true }
-        });
-        ed.doc = sjs.get(room, layer);
-        ed.doc.subscribe();
-        ed.doc.whenReady(function () {
-          if (!ed.doc.type) ed.doc.create('text');
-          if (ed.doc.type && ed.doc.type.name === 'text') {
-            ed.doc.attachCodeMirror(ed.cm);
-          }
-        });
-        return ed;
-      }
-      for(var i=0; i<20; i++) {
-        editors.push(getNewEditor('room1', 'code'+i, 'pad'+i));
-      }
-
-    </script>
+  <script src="/index.js"></script>
   </body>
 </html>
