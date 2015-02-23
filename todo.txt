@@ -1,0 +1,52 @@
+layers move when others send code
+cursor jumps to received layer
+layers are not updated sometimes
+having a layer owner, otherwise there are orfan layers who no one dares to delete.
+showing layer name, layer owner
+
+Firepad needs Firebase :(
+
+OT - operational transformations
+http://sharejs.org/
+
+Use codemirror. 
+http://codemirror.net/
+
+And mixing both:
+https://github.com/share/share-codemirror
+
+Tested with 20 editors. Syncs fine.
+
+Cursor sync'ing is missing:
+https://github.com/share/ShareJS/issues/24
+
+---
+
+Concept:
+  simple: no chat, no db, no hidden stuff.
+
+CodeMirror:
+  var c = doc.getCursor('head');
+  doc.setCursor(c);
+  var d = doc.getValue();
+  doc.setValue(d);
+  events: change? changes? cursorActivity? focus? blur?
+
+
+Interact: 
+  eye icon: to enable, disable, 
+  delete: delete key on empty field
+  sort: drag and drop http://jqueryui.com/sortable/
+  room: get from URL
+  move in grid: ESC > arrows
+
+Saving:
+  server: on click, save snapshot [room].js to disk. max 1 per 10 sec? name? delete?
+  client: load snapshot
+
+Avoid infinite loops:
+  Set timeout(50ms?)
+  Eval your code (alt+enter)
+  On timeout, if code evaled, send code.
+  If infinite loop or slow code, code is not sent.
+  Would be good to have a presentation computer (it never receives infinite loops)
