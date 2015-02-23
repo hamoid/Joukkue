@@ -122,7 +122,7 @@ input {
   border-style: dashed;
 }
 #grid td.crashed {
-  background-image: url(/bug.gif);
+  background-image: url(/public/bug.gif);
 }
 
 #thead {
@@ -168,6 +168,10 @@ span.chatFromSelf b {
   margin-bottom: 2px;
   font-size: 125%;
 }
+.CodeMirror-activeline,
 .CodeMirror-activeline-background {
   background-color: #444 !important;
+}
+.error {
+  background-image: url(/public/bug.gif);
 }
