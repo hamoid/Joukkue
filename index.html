@@ -1,43 +1,82 @@
-<!doctype html>
+<!DOCTYPE html>
 <html>
-    <head>
-        <title>Joukkue</title>
-        <link rel='stylesheet' href='/beauty.css' type='text/css' />
-    </head>
-    <body>
-        <div id="leftBackground"></div>
+  <head>
+    <link rel="stylesheet" href="/lib/codemirror.css">
+    <link rel="stylesheet" href="/theme/zenburn.css">
+    <link rel="stylesheet" href="/addon/hint/show-hint.css">
+    <script src="/lib/codemirror.js"></script>
+    <script src="/channel/bcsocket.js"></script>
+    <script src="/share.uncompressed.js"></script>
+    <script src="/share-codemirror.js"></script>
+    <script src="/addon/edit/matchbrackets.js"></script>
+    <script src="/addon/edit/closebrackets.js"></script>
+    <script src="/addon/hint/show-hint.js"></script>
+    <script src="/addon/hint/javascript-hint.js"></script>
+    <script src="/addon/selection/active-line.js"></script>
+    <script src="/mode/javascript/javascript.js"></script>
 
-        <table id="right_column">
-            <tr>
-                <td id="row_menu">
-                    <input type="button" id="but_new_layer" value="" />
-                    <input type="button" id="but_help" value="" />
-                    <input type="button" id="but_play_pause" value="" />
-                </td>
-            </tr>
-            <tr>
-                <td id="row_grid">
-                    <table id="grid"></table>
-                </td>
-            </tr>
-            <tr>
-                <td id="row_chatView"></td>
-            </tr>
-            <tr>
-                <td id="row_chatBox" contentEditable="true"></td>
-            </tr>
-        </table>
+    <style>
+      body {
+        background-color: #333;
+      }
+      .CodeMirror {
+        height: auto;
+        margin-bottom: 2px;
+        font-size: 125%;
+      }
+      .CodeMirror-activeline-background {
+        background-color: #444 !important;
+      }
+    </style>
+  </head>
+  <body>
+    <script>
+      // connection
+      var s = new BCSocket(null, {
+        reconnect: true
+      });
+      var sjs = new window.sharejs.Connection(s);
 
-        <script src="/p5.min.js"></script>
-        <script src="/p5.sound.min.js"></script>
+      var editors = [];
 
-        <script src="/jquery-2.1.1.min.js"></script>
-        <script src="/jquery.ba-throttle-debounce.min.js"></script>
-        <script src="/socket.io-1.2.0.js"></script>
+      function getNewEditor(room, layer, id) {
+        var ed = {};
 
-        <script src="/constants.js"></script>
-        <script src="/string.js"></script>
-        <script src="/txt.js"></script>
-        <script src="/client.js"></script>
-    </body>
+        document.write('<textarea id="' + id + '">...</textarea>');
+
+        CodeMirror.commands.joukkueEval = function() {
+          console.log('joukkue eval');
+        }
+
+        ed.elem = document.getElementById(id);
+        ed.cm = CodeMirror.fromTextArea(ed.elem, {
+          //lineNumbers: true,
+          matchBrackets: true,
+          autoCloseBrackets: true,
+          styleActiveLine: true,
+          extraKeys: { 
+            'Ctrl-Q': 'toggleComment',
+            'Ctrl-Space': 'autocomplete',
+            'Alt-Enter': 'joukkueEval'
+          },
+          tabSize: 2,
+          theme: 'zenburn',
+          mode: { name: 'javascript', json: false, globalVars: true }
+        });
+        ed.doc = sjs.get(room, layer);
+        ed.doc.subscribe();
+        ed.doc.whenReady(function () {
+          if (!ed.doc.type) ed.doc.create('text');
+          if (ed.doc.type && ed.doc.type.name === 'text') {
+            ed.doc.attachCodeMirror(ed.cm);
+          }
+        });
+        return ed;
+      }
+      for(var i=0; i<20; i++) {
+        editors.push(getNewEditor('room1', 'code'+i, 'pad'+i));
+      }
+
+    </script>
+  </body>
 </html>
