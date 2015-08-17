@@ -71,9 +71,18 @@ app.use(browserChannel({ base: '/meta'}, function(session) {
             }
           }
          break;
+
         case 'all':
           for(var id in allSessions) {
             allSessions[id].send({ op: 'say', arg: data.arg });
+          }
+          break;
+
+        case 'run':
+          for(var id in allSessions) {
+            if(id != session.id) {
+              allSessions[id].send({ op: 'run', arg: data.arg });
+            }
           }
           break;
       }

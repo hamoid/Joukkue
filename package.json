@@ -1,7 +1,7 @@
 {
-  "name": "CreativeCodeChat",
-  "version": "0.1.0",
-  "description": "Multiuser code chat toy based on p5.js",
+  "name": "Joukkue",
+  "version": "0.2.0",
+  "description": "Web based Collaborative Creative Coding with p5.js",
   "main": "server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
