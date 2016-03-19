@@ -1,2 +1,0 @@
-nohup node server.js &
-
