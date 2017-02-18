@@ -34,7 +34,7 @@ function getNewEditor(room, type, id) {
     matchBrackets: true,
     autoCloseBrackets: true,
     styleActiveLine: true,
-    extraKeys: { 
+    extraKeys: {
       'Ctrl-Q': 'toggleComment',
       'Ctrl-Space': 'autocomplete',
       'Alt-Enter': 'joukkueEval'
@@ -59,7 +59,8 @@ function getNewEditor(room, type, id) {
   return ed;
 }
 
-// ║║║├┤  │ ├─┤  │  ├─┤├─┤││││││├┤ │  
+// ╔╦╗┌─┐┌┬┐┌─┐  ┌─┐┬ ┬┌─┐┌┐┌┌┐┌┌─┐┬
+// ║║║├┤  │ ├─┤  │  ├─┤├─┤││││││├┤ │
 // ╩ ╩└─┘ ┴ ┴ ┴  └─┘┴ ┴┴ ┴┘└┘┘└┘└─┘┴─┘
 
 // Used to exchange the information that is not doing the text area
@@ -84,7 +85,7 @@ metaSocket.onmessage = function(msg) {
         var name = msg.data.arg;
         console.log('run', name);
         var layer = J.layerModel.layers[name];
-        var editor = layer.editors[J.layerModel.CODE + name]; 
+        var editor = layer.editors[J.layerModel.CODE + name];
         var code = editor.cm.doc.getValue();
         try {
           eval('var f = function(d) { ' + code + ' }');
@@ -129,10 +130,10 @@ LayerModel.prototype.createLayer = function(name) {
   // TODO: create textarea, send it as argument
   // var varsEditor = getNewEditor('room', this.VARS, name);
   var codeEditor = getNewEditor('room', this.CODE, name);
-  
+
   // l.editors[this.VARS] = varsEditor;
   l.editors[this.CODE + name] = codeEditor;
-  
+
   this.layers[name] = l;
   this.layersSorted.push(l);
 };
@@ -159,7 +160,7 @@ LayerModel.prototype.publish = function(name) {
   var layer = this.layers[name];
   // TODO: figure out whether it's CODE or VARS that got published
   // (so far we have here only CODE).
-  var editor = layer.editors[this.CODE + name]; 
+  var editor = layer.editors[this.CODE + name];
   var code = editor.cm.doc.getValue();
   try {
     eval('var f = function(d) { ' + code + ' }');
