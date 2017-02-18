@@ -16,7 +16,7 @@ app.use(express.static(shareCodeMirror.scriptsDir));
 app.use(express.static(__dirname + '/node_modules/codemirror'));
 app.use(express.static(sharejs.scriptsDir));
 
-// Most of this code comes from
+// Note: most of this code comes from
 // https://github.com/share/share-codemirror/blob/master/examples/server.js
 
 // ╔═╗┬ ┬┌─┐┬─┐┌─┐  ┬┌─┐
@@ -92,6 +92,8 @@ app.use(browserChannel({ base: '/meta'}, function(session) {
   });
   session.on('close', function (reason) {
     delete allSessions[session.id];
+    // 2lj6q443 is gone because Timed out
+    // Takes a while. Maybe 30 seconds.
     console.log(session.id + ' is gone because ' + reason);
   });
 
