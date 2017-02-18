@@ -59,7 +59,6 @@ function getNewEditor(room, type, id) {
   return ed;
 }
 
-// ╔╦╗┌─┐┌┬┐┌─┐  ┌─┐┬ ┬┌─┐┌┐┌┌┐┌┌─┐┬  
 // ║║║├┤  │ ├─┤  │  ├─┤├─┤││││││├┤ │  
 // ╩ ╩└─┘ ┴ ┴ ┴  └─┘┴ ┴┴ ┴┘└┘┘└┘└─┘┴─┘
 
@@ -149,8 +148,8 @@ LayerModel.prototype.draw = function() {
         layer.drawFunc();
       } catch(e) {
         layer.crashed = true;
-        layer.editors[this.CODE].cm.getWrapperElement().classList.add("error");
-      } 
+        layer.editors[this.CODE + layer.name].cm.getWrapperElement().classList.add("error");
+      }
     }
     pop(); // p5
   }
