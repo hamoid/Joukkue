@@ -16,6 +16,8 @@ app.use(express.static(shareCodeMirror.scriptsDir));
 app.use(express.static(__dirname + '/node_modules/codemirror'));
 app.use(express.static(sharejs.scriptsDir));
 
+// Most of this code comes from
+// https://github.com/share/share-codemirror/blob/master/examples/server.js
 
 // ╔═╗┬ ┬┌─┐┬─┐┌─┐  ┬┌─┐
 // ╚═╗├─┤├─┤├┬┘├┤   │└─┐
@@ -50,8 +52,8 @@ app.use(browserChannel(function (client) {
 }));
 
 
-// ╔╦╗┌─┐┌┬┐┌─┐  ┌─┐┬ ┬┌─┐┌┐┌┌┐┌┌─┐┬  
-// ║║║├┤  │ ├─┤  │  ├─┤├─┤││││││├┤ │  
+// ╔╦╗┌─┐┌┬┐┌─┐  ┌─┐┬ ┬┌─┐┌┐┌┌┐┌┌─┐┬
+// ║║║├┤  │ ├─┤  │  ├─┤├─┤││││││├┤ │
 // ╩ ╩└─┘ ┴ ┴ ┴  └─┘┴ ┴┴ ┴┘└┘┘└┘└─┘┴─┘
 
 var allSessions = {};
@@ -98,7 +100,7 @@ app.use(browserChannel({ base: '/meta'}, function(session) {
 
 
 var server = http.createServer(app);
-server.listen(7007, function (err) {
+server.listen(3000, function (err) {
   if (err) throw err;
 
   console.log('Listening on http://%s:%s', server.address().address, server.address().port);
