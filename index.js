@@ -189,6 +189,15 @@ Joukkue.prototype.draw = function() {
   this.layerModel.draw();
 };
 
+Joukkue.prototype.runAllLayers = function() {
+  for(var i in J.layerModel.layers) {
+    var layerCharCount = J.layerModel.layers[i].editors["code" + i].cm.doc.getValue().length;
+    if(layerCharCount > 0) {
+      runLayer(i);
+    }
+  }
+}
+
 // ====
 // CodeMirror handler for alt-enter
 CodeMirror.commands.joukkueEval = function(cm) {
@@ -206,6 +215,8 @@ var J = new Joukkue();
 function setup() {
   createCanvas(540, 540);
   J.clearCanvas();
+  // Evaluate all layers 1 second after starting.
+  setTimeout(J.runAllLayers, 1000);
 }
 
 function draw() {
