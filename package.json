@@ -16,14 +16,14 @@
     "url": "git://github.com/hamoid/joukkue/issues"
   },
   "dependencies": {
-    "share-codemirror": "^0.1.0",
-    "browserchannel": "^2.0.0",
-    "codemirror": "^4.8.0",
-    "express": "^4.10.3",
-    "istanbul": "^0.3.2",
+    "share-codemirror": "0.1.0",
+    "browserchannel": "2.0.0",
+    "codemirror": "4.13.0",
+    "express": "4.12.0",
+    "istanbul": "0.3.6",
     "jsdom": "0.8.8",
-    "livedb": "^0.4.9",
-    "mocha": "^2.0.1",
-    "share": "^0.7.3"
+    "livedb": "0.4.11",
+    "mocha": "2.1.0",
+    "share": "0.7.6"
   }
 }
