@@ -50,3 +50,48 @@ Avoid infinite loops:
   On timeout, if code evaled, send code.
   If infinite loop or slow code, code is not sent.
   Would be good to have a presentation computer (it never receives infinite loops)
+
+--- 18 Feb 2017 - Code Jam
+
+DONE: 
+
+* Fixed a bug with adding err css.
+
+* Trying to install it another computer there seems to be 
+  npm package issues. I fixed all the package versions.
+
+TODO:
+
+* Figure out if XCode is needed on OSX to install Joukkue.
+
+* If I connect late, I need to evaluate all layers. How to know which layers are running?
+
+* Avoid loosing layers if restarting the server
+
+* Namespace environment by URL, to avoid different "rooms". See
+  'room' in index.js.
+
+* Be able to evaluate selection
+
+
+// Test of assigning a variable one time.
+
+if(!J.vars) {
+  J.vars = {};
+  J.vars.env = new p5.Env();
+  J.vars.env.setADSR(0.001, 0.2, 0.2, 0.5);
+  J.vars.env.setRange(1.0, 0.0);
+
+  J.vars.triOsc = new p5.Oscillator('triangle');
+  J.vars.triOsc.amp(J.vars.env);
+  J.vars.triOsc.start();
+  J.vars.triOsc.freq(random(200, 500));  
+} else {
+  if(frameCount % 60 == -1) {
+	  J.vars.env.play();  
+		background(random(255));
+		noStroke();
+		fill(random(255));
+		ellipse(width/2, height/2, 300, 300);
+  }
+}
