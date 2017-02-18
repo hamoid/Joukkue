@@ -17,15 +17,6 @@ var shareJsConnection = new window.sharejs.Connection(editorSocket);
 function getNewEditor(room, type, id) {
   var ed = {};
 
-  // TODO: these lines should not be part, the elem
-  // (a textarea) should be sent from outside.
-
-  // add new textarea to the editor
-  var column = document.getElementById("right_column");
-  var textarea = document.createElement("textarea");
-  textarea.id = id;
-  column.appendChild(textarea);
-
   // attach CodeMirror to the new textarea
   ed.elem = document.getElementById(id);
 
@@ -59,13 +50,31 @@ function getNewEditor(room, type, id) {
   return ed;
 }
 
+function runLayer(name) {
+  console.log('run', name);
+  var layer = J.layerModel.layers[name];
+  // TODO: figure out whether it's CODE or VARS that got published
+  // (so far we have here only CODE).
+  var editor = layer.editors[J.layerModel.CODE + name];
+  var code = editor.cm.doc.getValue();
+  try {
+    eval('var f = function(d) { ' + code + ' }');
+    layer.drawFunc = f;
+    layer.crashed = false;
+    editor.cm.getWrapperElement().classList.remove("error");
+  } catch(e) {
+    layer.crashed = true;
+    editor.cm.getWrapperElement().classList.add("error");
+  }
+}
+
 // ╔╦╗┌─┐┌┬┐┌─┐  ┌─┐┬ ┬┌─┐┌┐┌┌┐┌┌─┐┬
 // ║║║├┤  │ ├─┤  │  ├─┤├─┤││││││├┤ │
 // ╩ ╩└─┘ ┴ ┴ ┴  └─┘┴ ┴┴ ┴┘└┘┘└┘└─┘┴─┘
 
 // Used to exchange the information that is not doing the text area
 // synchronization.
-
+// Messages coming from the server / other users.
 var metaSocket = new BCSocket('/meta', {
   reconnect: true
 });
@@ -79,23 +88,7 @@ metaSocket.onmessage = function(msg) {
         break;
 
       case 'run':
-        // TODO: unduplicate this code.
-        // It comes from publish().
-        // Just for quick testing
-        var name = msg.data.arg;
-        console.log('run', name);
-        var layer = J.layerModel.layers[name];
-        var editor = layer.editors[J.layerModel.CODE + name];
-        var code = editor.cm.doc.getValue();
-        try {
-          eval('var f = function(d) { ' + code + ' }');
-          layer.drawFunc = f;
-          layer.crashed = false;
-          editor.cm.getWrapperElement().classList.remove("error");
-        } catch(e) {
-          layer.crashed = true;
-          editor.cm.getWrapperElement().classList.add("error");
-        }
+        runLayer(msg.data.arg);
         break;
 
       default:
@@ -127,7 +120,12 @@ function LayerModel() {
 LayerModel.prototype.createLayer = function(name) {
   var l = new this.Layer(name);
 
-  // TODO: create textarea, send it as argument
+  // HTML: add new textarea to the editor
+  var column = document.getElementById("right_column");
+  var textarea = document.createElement("textarea");
+  textarea.id = name;
+  column.appendChild(textarea);
+
   // var varsEditor = getNewEditor('room', this.VARS, name);
   var codeEditor = getNewEditor('room', this.CODE, name);
 
@@ -157,22 +155,11 @@ LayerModel.prototype.draw = function() {
 };
 
 LayerModel.prototype.publish = function(name) {
-  var layer = this.layers[name];
-  // TODO: figure out whether it's CODE or VARS that got published
-  // (so far we have here only CODE).
-  var editor = layer.editors[this.CODE + name];
-  var code = editor.cm.doc.getValue();
-  try {
-    eval('var f = function(d) { ' + code + ' }');
-    layer.drawFunc = f;
-    layer.crashed = false;
-    editor.cm.getWrapperElement().classList.remove("error");
+  runLayer(name);
 
-    // send to others
+  // send to others if not crashed
+  if(!this.layers[name].crashed) {
     metaSocket.send({ op: 'run', arg: name });
-  } catch(e) {
-    layer.crashed = true;
-    editor.cm.getWrapperElement().classList.add("error");
   }
 }
 
