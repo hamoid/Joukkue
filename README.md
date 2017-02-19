@@ -30,7 +30,7 @@ At this point you should have a local server running on port 3000.
 * Find out your IP address. If, for instance, it's 192.168.0.30, tell other players to open http://192.168.0.30:3000 in their browsers (Firefox / Chrome / Chromium recommended).
 * Click on [new layer]. A new row should appear. In the second column, enter some p5.js code, like
 
-    ```ellipse(random(width), random(height), 30, 30);```
+    `ellipse(random(width), random(height), 30, 30);`
 
 and press ALT+ENTER to send it to everybody.
 
@@ -70,3 +70,9 @@ More detailed and organized instructions will follow :)
 * Meta (advanced): you can send JavaScript code can listen to other coders coding :) From JS you can inspect the page, and change it. You can inject new functionality.
 * Saving images on the server? .save command. [Send image to server](http://www.websector.de/blog/2011/12/22/pushing-binary-image-data-using-node-js-and-socket-io/).
 * Rewrite it all? :) This was built as a proof of concept without knowing exactly in which direction it would go. It could be simplified and improved by using certain libraries. Also, my day to day job is not JavaScript and it shows :)
+
+## Notes from 2017
+
+I've been working on the "realtime" branch. This branch uses share.js and codemirror to automatically synchronize the text fields in real time and provide syntax highlighting and autocompletion. It does not yet have all the features from the master branch, but it works. Since the text field synchronization is taken care of, the code is much simplified. 
+
+In Feb 2017's Creative Code Jam I fixed some bugs, and realized that share.js is no longer maintained, and became share.db instead. This link provides some information about a possible upgrade to share.db: http://www.garzul.tonsite.biz/wordpress/2016/10/16/multi-user-collaborative-text-editing-with-sharedb-and-codemirror/
