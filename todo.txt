@@ -1,3 +1,44 @@
+May 18 2019
+
+At the Creative Code Jam with Nuño we experimented with sharedb.
+There are a bunch of repos using ace or codemirror with sharedb, but they are all
+abandoned. The only repo that seems to be maintained is sharedb itself, with very
+recent commits. sharedb comes with 4 examples. During this code jam we made
+the textarea example work, then added a second textarea just for testing.
+
+Added to the folder sharedb/.
+
+Next step would be to see how they implemented sharedb in thoes ace/codemirror
+examples to do something similar, so we can use a fancier code editor than a simple
+textarea (for syntax highlighting), and maybe (optional) show cursors and selections
+from other participants.
+
+We also talked about types of layers. We might want to have 4 types of layers:
+* material: vertex+fragment, which affects following p5js layers
+* p5js: allows drawing 2D and 3D shapes to the current Graphics.
+* postprocessing: fragment shader, applied to the current Graphics. Would use
+  multiple buffers, in case you want to chain multiple postprocessing layers.
+* reset shader. Not sure if this is needed if we can call resetShader() in
+  p5js.
+
+It would be nice to have two different presentation modes. One in which the stack
+of layers is processed sequentially and there is only one output canvas, and another
+in which each layer gets its own canvas, to show a grid of side-by-side results,
+to be used in a workshop setting.
+
+Idea: 'solo' button, to only render one layer on your computer (in case it's getting
+confusing to figure out what you are contributing to the mix).
+
+Nov 18 2017
+
+I have downloaded src/sharedb-codemirror and it seems to work by running npm start.
+So I could try integrate it.
+Idea: use only one textarea per user. They can then use //once for code that should run
+only once. Could I wrap variables like var a; var b; inside their own space to avoid
+name collisions?
+
+---
+
 layers move when others send code
 cursor jumps to received layer
 layers are not updated sometimes
