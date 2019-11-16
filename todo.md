@@ -1,4 +1,26 @@
-May 18 2019
+# Nov 16 2019
+
+I added the ace editor but it's not linked yet to sharedb.
+I found https://github.com/jethrokuan/sharedb-ace and maybe I could make
+it work. It seems like the integration with ace is not trivial.
+The code seems to transform all the OT messages from one system (ACE)
+to the other (shareDB) and back.
+It's not clear how to run that sharedb-ace code. There is an example
+repo, but I didn't know how to start the server part.
+
+Next: look into integrating the code from sharedb-ace into my code,
+which does work alreary for simple textarea objects.
+
+My client.js file looks like
+https://github.com/jethrokuan/sharedb-ace/blob/master/source/sharedb-ace.js
+which the loads 
+https://github.com/jethrokuan/sharedb-ace/blob/master/source/sharedb-ace-binding.js
+So it uses that sharedb-ace binding instead of StringBinding.
+
+The Ace API: https://ace.c9.io/#howto=&nav=howto
+
+
+# May 18 2019
 
 At the Creative Code Jam with Nuño we experimented with sharedb.
 There are a bunch of repos using ace or codemirror with sharedb, but they are all
@@ -6,30 +28,31 @@ abandoned. The only repo that seems to be maintained is sharedb itself, with ver
 recent commits. sharedb comes with 4 examples. During this code jam we made
 the textarea example work, then added a second textarea just for testing.
 
-Added to the folder sharedb/.
+To run:
 
-Next step would be to see how they implemented sharedb in thoes ace/codemirror
+    cd sharedb
+    npm run build && npm start
+
+* Next step: see how they implemented sharedb in the ace/codemirror
 examples to do something similar, so we can use a fancier code editor than a simple
 textarea (for syntax highlighting), and maybe (optional) show cursors and selections
 from other participants.
 
-We also talked about types of layers. We might want to have 4 types of layers:
-* material: vertex+fragment, which affects following p5js layers
+We talked about 4 layer types:
+* material: vertex+fragment which affects following p5js layers
 * p5js: allows drawing 2D and 3D shapes to the current Graphics.
 * postprocessing: fragment shader, applied to the current Graphics. Would use
   multiple buffers, in case you want to chain multiple postprocessing layers.
 * reset shader. Not sure if this is needed if we can call resetShader() in
   p5js.
 
-It would be nice to have two different presentation modes. One in which the stack
-of layers is processed sequentially and there is only one output canvas, and another
-in which each layer gets its own canvas, to show a grid of side-by-side results,
-to be used in a workshop setting.
-
-Idea: 'solo' button, to only render one layer on your computer (in case it's getting
+* have two different presentation modes. 
+  * stack of layers is processed sequentially and there is only one output canvas
+  * grid of layers, each gets its own canvas, to be used in a workshop setting.
+* Idea: 'solo' button to only render one layer on your computer (in case it's getting
 confusing to figure out what you are contributing to the mix).
 
-Nov 18 2017
+# Nov 18 2017
 
 I have downloaded src/sharedb-codemirror and it seems to work by running npm start.
 So I could try integrate it.
