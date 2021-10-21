@@ -1,3 +1,7 @@
+NOTE: this project hasn't been updated in a long time. Some of it's dependencies
+are insecure! They need to be updated. Also, there's the `realtime` branch which
+I never finished. Therefore I will sadly archive Joukkue for the time being.
+
 # Joukkue - Collaborative Creative Coding
 
 ## What is Joukkue?
